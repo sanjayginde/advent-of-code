@@ -129,31 +129,33 @@ fn main() {
 
 #[cfg(test)]
 mod test {
+    use rstest::rstest;
+
     use super::find_first_digit;
     use super::find_last_digit;
     use super::parse;
 
-    #[test]
-    fn test_parse() {
-        assert_eq!(parse("dqc57tf1xmkdnll".to_string()), Ok(51));
-        assert_eq!(parse("4beight8".to_string()), Ok(48));
-        assert_eq!(parse("37rrsn".to_string()), Ok(37));
-        assert_eq!(parse("fjdihy40".to_string()), Ok(40));
-        assert_eq!(parse("fjdihy402947".to_string()), Ok(47));
+    #[rstest]
+    #[case("dqc57tf1xmkdnll", 51)]
+    #[case("4beight8", 48)]
+    #[case("37rrsn", 37)]
+    #[case("fjdihy40", 40)]
+    #[case("fjdihy402947", 47)]
+    #[case("7874", 74)]
+    #[case("87", 87)]
+    #[case("jp3", 33)]
+    #[case("7", 77)]
+    #[case("4dkj", 44)]
+    #[case("djubh8dnsk", 88)]
+    fn test_parse(#[case] input: &str, #[case] expected:i32) {
+        assert_eq!(parse(input.to_string()).unwrap(), expected);
     }
 
-    #[test]
-    fn test_all_numbers() {
-        assert_eq!(parse("7874".to_string()), Ok(74));
-        assert_eq!(parse("87".to_string()), Ok(87));
-    }
-
-    #[test]
-    fn test_single_number() {
-        assert_eq!(parse("jp3".to_string()), Ok(33));
-        assert_eq!(parse("7".to_string()), Ok(77));
-        assert_eq!(parse("4dkj".to_string()), Ok(44));
-        assert_eq!(parse("djubh8dnsk".to_string()), Ok(88));
+    #[rstest]
+    #[case("xtwone3four", 2)]
+    #[case("x3twone3four", 3)]
+    fn test_find_first_digit(#[case] input: &str, #[case] expected:i32) {
+        assert_eq!(find_first_digit(input.to_string()).unwrap(), expected);
     }
 
     // #[test]
@@ -161,18 +163,12 @@ mod test {
     //     assert!(parse("jslaskljdsf".to_string()).is_err());
     // }
 
-
-    #[test]
-    fn test_find_first_digit() {
-        assert_eq!(find_first_digit("xtwone3four".to_string()), Some(2));
-        assert_eq!(find_first_digit("x3twone3four".to_string()), Some(3));
-    }
-
-    #[test]
-    fn test_find_last_digit() {
-        assert_eq!(find_last_digit("8twone".to_string()), Some(1));
-        assert_eq!(find_last_digit("8sevenine".to_string()), Some(9));
-        assert_eq!(find_last_digit("8seven5ine".to_string()), Some(5));
-        assert_eq!(find_last_digit("8sevenineihn".to_string()), Some(9));
+    #[rstest]
+    #[case("8twone", 1)]
+    #[case("8sevenine", 9)]
+    #[case("8seven5ine", 5)]
+    #[case("8sevenineihn", 9)]
+    fn test_find_last_digit(#[case] input: &str, #[case] expected:i32) {
+        assert_eq!(find_last_digit(input.to_string()).unwrap(), expected);
     }
 }
