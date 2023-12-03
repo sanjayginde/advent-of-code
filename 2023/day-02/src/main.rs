@@ -37,8 +37,9 @@ struct Game {
 // Game 5
 fn parse_game_number(game: &str) -> u32 {
     let mut split: Vec<_> = game.split(" ").collect();
-    
-    return split.pop()
+
+    return split
+        .pop()
         .expect("format Game <num>")
         .parse::<u32>()
         .expect("expected game number");
@@ -77,8 +78,8 @@ fn parse(line: String) -> Row {
 
     let mut game: Vec<_> = line.split(":").collect();
 
-
-    let games: Vec<_> = game.pop()
+    let games: Vec<_> = game
+        .pop()
         .expect("list of games")
         .trim()
         .split(";")
@@ -88,19 +89,31 @@ fn parse(line: String) -> Row {
         let parsed_game = parse_game(game);
         // println!("\t{game:?}");
 
-        let blue = parsed_game.blue;
-        if blue.is_some() && blue.unwrap() > row.max_blue {
-            row.max_blue = blue.unwrap();
+        match parsed_game.blue {
+            Some(num) => {
+                if num > row.max_blue {
+                    row.max_blue = num
+                }
+            }
+            None => {}
         }
 
-        let green = parsed_game.green;
-        if green.is_some() && green.unwrap() > row.max_green {
-            row.max_green = green.unwrap();
+        match parsed_game.green {
+            Some(num) => {
+                if num > row.max_green {
+                    row.max_green = num
+                }
+            }
+            None => {}
         }
 
-        let red = parsed_game.red;
-        if red.is_some() && red.unwrap() > row.max_red {
-            row.max_red = red.unwrap();
+        match parsed_game.red {
+            Some(num) => {
+                if num > row.max_red {
+                    row.max_red = num
+                }
+            }
+            None => {}
         }
     }
 
