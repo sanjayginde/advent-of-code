@@ -34,10 +34,11 @@ struct Game {
     red: Option<u32>,
 }
 
+// Game 5
 fn parse_game_number(game: &str) -> u32 {
-    let split: Vec<_> = game.split(" ").collect();
-    return split
-        .get(1)
+    let mut split: Vec<_> = game.split(" ").collect();
+    
+    return split.pop()
         .expect("format Game <num>")
         .parse::<u32>()
         .expect("expected game number");
@@ -74,14 +75,10 @@ fn parse_game(game: &str) -> Game {
 fn parse(line: String) -> Row {
     let mut row = Row::new();
 
-    let game: Vec<_> = line.split(":").collect();
-    row.game_num = Some(parse_game_number(
-        game.get(0).expect("expected game num split"),
-    ));
-    // println!("game num: {:?}", row.game_num);
+    let mut game: Vec<_> = line.split(":").collect();
 
-    let games: Vec<_> = game
-        .get(1)
+
+    let games: Vec<_> = game.pop()
         .expect("list of games")
         .trim()
         .split(";")
@@ -106,6 +103,11 @@ fn parse(line: String) -> Row {
             row.max_red = red.unwrap();
         }
     }
+
+    row.game_num = Some(parse_game_number(
+        game.pop().expect("expected game num split"),
+    ));
+    // println!("game num: {:?}", row.game_num);
 
     // println!("\trow: {row:?}");
     row
@@ -144,11 +146,15 @@ fn main() {
 
     match args.len() {
         0..=1 => println!("Pass in filename to solve and part"),
-        _ => println!(
-            "Solution for {} is {}",
+        3 => println!(
+            "Solution for part 2 for {} is {}",
             args[1].clone(),
-            // solve_part1(read_lines(&args[1].clone()))
             solve_part2(read_lines(&args[1].clone()))
+        ),
+        _ => println!(
+            "Solution for part 1 for {} is {}",
+            args[1].clone(),
+            solve_part1(read_lines(&args[1].clone()))
         ),
     }
 }
