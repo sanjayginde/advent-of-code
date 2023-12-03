@@ -73,7 +73,7 @@ fn parse_game(game: &str) -> Game {
     result
 }
 
-fn parse(line: String) -> Row {
+fn parse(line: &String) -> Row {
     let mut row = Row::new();
 
     let mut game: Vec<_> = line.split(":").collect();
@@ -137,7 +137,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 fn solve_part1(lines: Vec<String>) -> u32 {
     let mut total: u32 = 0;
     for line in lines.iter() {
-        let row = parse(line.to_owned());
+        let row = parse(line);
         if row.is_possible() {
             total += row.game_num.unwrap();
         }
@@ -146,12 +146,10 @@ fn solve_part1(lines: Vec<String>) -> u32 {
 }
 
 fn solve_part2(lines: Vec<String>) -> u32 {
-    let mut total: u32 = 0;
-    for line in lines.iter() {
-        let row = parse(line.to_owned());
-        total += row.power();
-    }
-    total
+    lines
+        .iter()
+        .map(|line| -> u32 { parse(line).power() })
+        .sum()
 }
 
 fn main() {
