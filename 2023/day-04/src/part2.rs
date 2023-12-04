@@ -1,6 +1,27 @@
 use std::{env, fs::read_to_string};
 
 #[derive(Debug)]
+struct Card {
+    winning: Numbers,
+    player: Numbers,
+}
+
+impl Card {
+    pub fn new(winning: Numbers, player: Numbers) -> Card {
+        Card { winning, player }
+    }
+    pub fn num_winners(&self) -> u32 {
+        let mut result: u32 = 0;
+        for number in self.player.numbers.iter() {
+            if self.winning.contains(*number) {
+                result = result + 1;
+            }
+        }
+        result
+    }
+}
+
+#[derive(Debug)]
 struct Numbers {
     numbers: Vec<u32>,
 }
@@ -24,34 +45,36 @@ impl From<&str> for Numbers {
 }
 
 fn solve(lines: Vec<String>) -> u32 {
-    let mut total: u32 = 0;
+    let mut num_card_copies = vec![1 as u32; lines.len()];
 
-    for line in lines {
+    for (pos, line) in lines.iter().enumerate() {
         let mut splits = line.split(&[':', '|']).collect::<Vec<&str>>();
         splits = splits.iter().map(|s| s.trim()).collect();
         let mut splits_iter = splits.iter();
 
         let _card = *splits_iter.next().unwrap();
-        let winning_numbers = Numbers::from(*splits_iter.next().unwrap());
-        let players_numbers = Numbers::from(*splits_iter.next().unwrap());
+        let card = Card::new(
+            Numbers::from(*splits_iter.next().unwrap()),
+            Numbers::from(*splits_iter.next().unwrap()),
+        );
 
-        let mut points: Option<u32> = None;
-        for number in players_numbers.numbers {
-            if winning_numbers.contains(number) {
-                points = match points {
-                    None => Some(1),
-                    Some(val) => Some(val * 2),
-                }
+        // Number of copies of the current card
+        let num_copies = num_card_copies[pos];
+
+        let mut num_winners = card.num_winners();
+
+        for (nc_pos, num_card_copy) in num_card_copies.iter_mut().enumerate() {
+            if num_winners == 0 {
+                break;
             }
-        }
-
-        total += match points {
-            None => 0,
-            Some(val) => val,
+            if nc_pos > pos {
+                *num_card_copy += num_copies;
+                num_winners -= 1;
+            }
         }
     }
 
-    total
+    num_card_copies.iter().sum()
 }
 
 fn main() {
@@ -93,6 +116,6 @@ mod test {
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve(rows), 13);
+        assert_eq!(solve(rows), 30);
     }
 }
