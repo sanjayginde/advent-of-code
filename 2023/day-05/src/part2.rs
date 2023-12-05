@@ -48,12 +48,11 @@ impl Map {
     }
 }
 
-fn solve(lines: Vec<String>) -> i64 {
+fn parse(lines: Vec<String>) -> (Vec<i64>, Vec<Map>) {
     let numbers_re = Regex::new(r"(\d+) (\d+) (\d+)").unwrap();
-    let mut maps: Vec<Map> = Vec::new();
-
     let mut lines_iter = lines.iter();
 
+    let mut maps: Vec<Map> = Vec::new();
     let seeds: Vec<i64> = lines_iter
         .next()
         .unwrap()
@@ -87,6 +86,12 @@ fn solve(lines: Vec<String>) -> i64 {
             }
         }
     }
+
+    (seeds, maps)
+}
+
+fn solve(lines: Vec<String>) -> i64 {
+    let (seeds, maps) = parse(lines);
 
     let seed_ranges: Vec<Range<i64>> = seeds
         .chunks_exact(2)
