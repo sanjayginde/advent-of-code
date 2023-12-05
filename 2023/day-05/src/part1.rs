@@ -1,70 +1,67 @@
-use std::{env, fs::read_to_string, ops::Range};
+use std::{env, fs::read_to_string};
 
 use regex::Regex;
-struct Ranges {
-    destination_start: u64,
-    source_start: u64,
-    _length: u64,
-    _destination: Range<u64>,
-    source: Range<u64>,
+struct SourceRange {
+    source: std::ops::Range<i64>,
+    offset: i64,
 }
 
-impl Ranges {
-    pub fn new(destination_start: u64, source_start: u64, range_length: u64) -> Ranges {
-        let destination_range = Range {
-            start: destination_start,
-            end: destination_start + range_length,
-        };
-
-        let source_range = Range {
+impl SourceRange {
+    pub fn new(destination_start: i64, source_start: i64, range_length: i64) -> SourceRange {
+        let source_range = std::ops::Range {
             start: source_start,
             end: source_start + range_length,
         };
 
-        Ranges {
-            destination_start,
-            source_start,
-            _length: range_length,
-            _destination: destination_range,
+        SourceRange {
             source: source_range,
+            offset: destination_start - source_start as i64,
+        }
+    }
+
+    pub fn map_to_destination(&self, source_num: i64) -> Option<i64> {
+        match self.source.contains(&source_num) {
+            true => Some(source_num + self.offset),
+            false => None,
         }
     }
 }
 
 struct Map {
     _name: String,
-    ranges: Vec<Ranges>,
+    ranges: Vec<SourceRange>,
 }
 
 impl Map {
-    pub fn push_ranges(&mut self, range: Ranges) {
+    pub fn push_ranges(&mut self, range: SourceRange) {
         self.ranges.push(range);
     }
 
-    pub fn source_to_destination(&self, source: u64) -> u64 {
+    pub fn map_to_destination(&self, source_num: i64) -> i64 {
         for range in &self.ranges {
-            if range.source.contains(&source) {
-                return source - range.source_start + range.destination_start;
+            match range.map_to_destination(source_num) {
+                Some(destination) => return destination,
+                None => {}
             }
         }
 
-        return source;
+        return source_num;
     }
 }
 
-fn solve(lines: Vec<String>) -> u64 {
+fn solve(lines: Vec<String>) -> i64 {
     let numbers_re = Regex::new(r"(\d+) (\d+) (\d+)").unwrap();
     let mut maps: Vec<Map> = Vec::new();
 
     let mut lines_iter = lines.iter();
 
-    let seeds: Vec<u64> = lines_iter
+    let seeds: Vec<i64> = lines_iter
         .next()
         .unwrap()
         .split(": ")
         .collect::<Vec<&str>>()[1]
         .split_whitespace()
-        .map(|n| n.parse::<u64>().unwrap())
+        .map(|n| n.parse::<i64>().unwrap())
         .collect();
 
     lines_iter.next();
@@ -83,21 +80,21 @@ fn solve(lines: Vec<String>) -> u64 {
             Some(caps) => {
                 maps.last_mut()
                     .expect("no last map available")
-                    .push_ranges(Ranges::new(
-                        *&caps[1].parse::<u64>().expect("destination number"),
-                        *&caps[2].parse::<u64>().expect("destination number"),
-                        *&caps[3].parse::<u64>().expect("destination number"),
+                    .push_ranges(SourceRange::new(
+                        *&caps[1].parse::<i64>().expect("destination number"),
+                        *&caps[2].parse::<i64>().expect("destination number"),
+                        *&caps[3].parse::<i64>().expect("destination number"),
                     ));
             }
         }
     }
 
-    let destinations: Vec<u64> = seeds
+    let destinations: Vec<i64> = seeds
         .into_iter()
         .map(|seed| {
             let mut current = seed;
             for map in maps.iter() {
-                current = map.source_to_destination(current);
+                current = map.map_to_destination(current);
             }
             current
         })
@@ -130,23 +127,18 @@ fn read_lines(filename: &str) -> Vec<String> {
 #[cfg(test)]
 mod test {
 
-    use crate::Ranges;
+    use crate::SourceRange;
 
     use super::solve;
 
     #[test]
-    fn test_map_range() {
-        let m = Ranges::new(50, 98, 2);
+    fn test_source_range() {
+        let source = SourceRange::new(50, 98, 2);
 
-        let mut dest = m._destination.into_iter();
-        assert_eq!(dest.next(), Some(50));
-        assert_eq!(dest.next(), Some(51));
-        assert_eq!(dest.next(), None);
-
-        let mut source = m.source.into_iter();
-        assert_eq!(source.next(), Some(98));
-        assert_eq!(source.next(), Some(99));
-        assert_eq!(source.next(), None);
+        assert_eq!(source.map_to_destination(97), None);
+        assert_eq!(source.map_to_destination(98), Some(50));
+        assert_eq!(source.map_to_destination(99), Some(51));
+        assert_eq!(source.map_to_destination(100), None);
     }
 
     #[test]
