@@ -1,12 +1,11 @@
 use regex::Regex;
 use std::{env, fs::read_to_string, ops::Range};
 
-#[allow(dead_code)]
+#[derive(Clone, Debug)]
 struct SourceRange {
     source: Range<i64>,
     destination: Range<i64>,
     offset: i64,
-    dest_offset: i64,
 }
 
 impl SourceRange {
@@ -25,7 +24,6 @@ impl SourceRange {
             source: source_range,
             destination: destination_range,
             offset: destination_start - source_start as i64,
-            dest_offset: source_start - destination_start,
         }
     }
 
@@ -39,21 +37,23 @@ impl SourceRange {
 
     pub fn map_to_source(&self, dest_num: i64) -> Option<i64> {
         match self.destination.contains(&dest_num) {
-            true => Some(dest_num + self.dest_offset),
+            true => Some(dest_num - self.offset),
             false => None,
         }
     }
 }
 
+#[derive(Clone, Debug)]
 struct Map {
     _name: String,
     ranges: Vec<SourceRange>,
 }
 
-#[allow(dead_code)]
 impl Map {
     pub fn push_ranges(&mut self, range: SourceRange) {
         self.ranges.push(range);
+        self.ranges
+            .sort_by(|lhs, rhs| lhs.destination.start.cmp(&rhs.destination.start));
     }
 
     pub fn map_to_destination(&self, source_num: i64) -> i64 {
@@ -121,30 +121,35 @@ fn parse(lines: Vec<String>) -> (Vec<i64>, Vec<Map>) {
     (seeds, maps)
 }
 
-fn solve(lines: Vec<String>) -> i64 {
-    let (seeds, mut maps) = parse(lines);
-
-    let seed_ranges: Vec<Range<i64>> = seeds
-        .chunks_exact(2)
-        .map(|chunk| {
-            let seed = chunk[0];
-            let length = chunk[1];
-
-            Range {
-                start: seed,
-                end: seed + length,
-            }
+fn solve_brute(seed_ranges: Vec<Range<i64>>, maps: Vec<Map>) -> i64 {
+    let nested_destinations: Vec<Vec<i64>> = seed_ranges
+        .into_iter()
+        .map(|seed_range| {
+            seed_range
+                .into_iter()
+                .map(|seed| {
+                    let mut current = seed;
+                    for map in maps.iter() {
+                        current = map.map_to_destination(current);
+                    }
+                    current
+                })
+                .collect()
         })
         .collect();
 
-    println!("{seed_ranges:?}");
+    let destinations: Vec<i64> = nested_destinations.into_iter().flatten().collect();
 
+    destinations.into_iter().min().unwrap()
+}
+
+fn solve_reverse(seed_ranges: Vec<Range<i64>>, mut maps: Vec<Map>) -> i64 {
     let mut result: Option<i64> = None;
     let mut destination: i64 = 0;
     maps.reverse();
 
     while result.is_none() {
-        println!("destination: {destination}");
+        // println!("destination: {destination}");
 
         let mut current: i64 = destination;
         for map in maps.iter() {
@@ -164,15 +169,39 @@ fn solve(lines: Vec<String>) -> i64 {
     result.unwrap()
 }
 
+fn solve(lines: Vec<String>, reverse: bool) -> i64 {
+    let (seeds, maps) = parse(lines);
+
+    let seed_ranges: Vec<Range<i64>> = seeds
+        .chunks_exact(2)
+        .map(|chunk| {
+            let seed = chunk[0];
+            let length = chunk[1];
+
+            Range {
+                start: seed,
+                end: seed + length,
+            }
+        })
+        .collect();
+
+    println!("{seed_ranges:?}");
+
+    match reverse {
+        true => solve_reverse(seed_ranges, maps),
+        false => solve_brute(seed_ranges, maps),
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
         0..=1 => println!("Pass in filename to solve and part"),
         _ => println!(
-            "Solution for part 1 for {} is {}",
+            "Solution for {} is {}",
             args[1].clone(),
-            solve(read_lines(&args[1].clone()))
+            solve(read_lines(&args[1].clone()), true)
         ),
     }
 }
@@ -242,6 +271,6 @@ mod test {
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve(rows), 46);
+        assert_eq!(solve(rows, true), 46,);
     }
 }
