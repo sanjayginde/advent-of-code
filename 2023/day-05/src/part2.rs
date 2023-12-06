@@ -197,9 +197,14 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
-        0..=1 => println!("Pass in filename to solve and part"),
+        0..=1 => println!("Pass in filename to solve"),
+        3 => println!(
+            "Brute force solution for {} is {}",
+            args[1].clone(),
+            solve(read_lines(&args[1].clone()), false)
+        ),
         _ => println!(
-            "Solution for {} is {}",
+            "Reverse solution for {} is {}",
             args[1].clone(),
             solve(read_lines(&args[1].clone()), true)
         ),
