@@ -12,7 +12,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 }
 
 fn starts_with_num(s: &str) -> Option<u32> {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(\d)+").unwrap());
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(\d+)").unwrap());
     match RE.captures(s) {
         Some(capture) => Some(capture.get(0).unwrap().as_str().parse::<u32>().unwrap()),
         None => None,
@@ -20,25 +20,20 @@ fn starts_with_num(s: &str) -> Option<u32> {
 }
 
 fn ends_with_num(s: &str) -> Option<u32> {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d)+$").unwrap());
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d+)$").unwrap());
     match RE.captures(s) {
         Some(capture) => Some(capture.get(0).unwrap().as_str().parse::<u32>().unwrap()),
         None => None,
     }
 }
 
-fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<Option<u32>> {
+fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<u32> {
     match row {
-        None => {
-            // return (None, None)
-        }
+        None => {}
         Some(row) => {
-            match row.chars().nth(col) {
-                // Some('*') => {
-                //     let (lhs, rhs) = row.split_at(col);
-                //     return vec![ends_with_num(lhs), starts_with_num(rhs)];
-                // }
-                Some('0'..='9') => {
+            let ch = row.chars().nth(col).unwrap();
+            match ch.is_numeric() {
+                true => {
                     let (lhs, rhs) = row.split_at(col);
                     let mut result: String = "".to_string();
                     match ends_with_num(lhs) {
@@ -52,28 +47,33 @@ fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<Option<u32>> {
                         Some(num) => {
                             result.push_str(num.to_string().as_str());
                         }
-                        None => {}
+                        None => {
+                            println!("rhs doesn't start with num: {rhs} col:{col}");
+                        }
                     }
+                    println!("result: {result}");
 
-                    return  vec![Some(result.parse::<u32>().unwrap())]
+                    return vec![result.parse::<u32>().unwrap()];
                 }
-                Some(_) => {
+                false => {
                     let (lhs, rhs) = row.split_at(col);
 
-                    return vec![ends_with_num(lhs), starts_with_num(rhs.get(1..).unwrap())];
-                }
-                None => {
+                    return vec![ends_with_num(lhs), starts_with_num(rhs.get(1..).unwrap())]
+                        .into_iter()
+                        .filter_map(|v| v)
+                        .collect();
                 }
             }
         }
     }
 
-    return vec![];
+    vec![]
 }
 
 fn solve(rows: Vec<String>) -> u32 {
     let mut total: u32 = 0;
 
+    println!("num lines: {}", rows.len());
     // let rows: Vec<Vec<char>> = lines.iter().map(|line| line.chars().collect()).collect();
     for (row_num, row) in rows.iter().enumerate() {
         // println!("{row_num}");
@@ -89,22 +89,16 @@ fn solve(rows: Vec<String>) -> u32 {
                 continue;
             }
 
-            let mut adjacent_nums:Vec<Option<u32>> = get_adjacent_nums(col_num, Some(row));
+            let mut adjacent_nums: Vec<u32> = get_adjacent_nums(col_num, Some(row));
             adjacent_nums.append(&mut get_adjacent_nums(col_num, previous_row));
             adjacent_nums.append(&mut get_adjacent_nums(col_num, next_row));
 
-            println!("{adjacent_nums:?}");
-            let filtered: Vec<_> = adjacent_nums.iter().filter_map(|num|
-                match num  {
-                    Some(n) => Some(n),
-                    None => None,
-                }
-                
-            ).collect();
+            // println!("{adjacent_nums:?}");
+            // let filtered: Vec<_> = adjacent_nums.into_iter().filter_map(|num| num).collect();
 
-            if filtered.len() == 2 {
-                println!("\tFound 2: {filtered:?}");
-                total += filtered[0] * filtered[1];
+            if adjacent_nums.len() == 2 {
+                println!("\tFound 2: {adjacent_nums:?}");
+                total += adjacent_nums[0] * adjacent_nums[1];
             }
         }
     }
@@ -147,5 +141,28 @@ mod test {
         .to_vec();
 
         assert_eq!(solve(rows), 467835);
+    }
+
+    #[test]
+    fn solve_example2() {
+        let rows = [
+            "....*467..",
+            "....**..*.",
+            ".467*114..",
+            "....*......",
+            "....7......",
+            "..*.......",
+            ".114......",
+            ".....840...",
+            "79..*......",
+            "../.460..#.",
+        ]
+        .map(String::from)
+        .to_vec();
+
+        assert_eq!(solve(rows), 53238 + 53238 + 53238 + 386400);
+        // assert_eq!(solve(rows), 159714);
+
+        // assert_eq!(solve(rows), 159714 + 218089 + 218089);
     }
 }
