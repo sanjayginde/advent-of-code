@@ -1,8 +1,12 @@
 use regex::Regex;
 use std::{env, fs::read_to_string, ops::Range};
+
+#[allow(dead_code)]
 struct SourceRange {
     source: Range<i64>,
+    destination: Range<i64>,
     offset: i64,
+    dest_offset: i64,
 }
 
 impl SourceRange {
@@ -12,15 +16,30 @@ impl SourceRange {
             end: source_start + range_length,
         };
 
+        let destination_range = Range {
+            start: destination_start,
+            end: destination_start + range_length,
+        };
+
         SourceRange {
             source: source_range,
+            destination: destination_range,
             offset: destination_start - source_start as i64,
+            dest_offset: source_start - destination_start,
         }
     }
 
     pub fn map_to_destination(&self, source_num: i64) -> Option<i64> {
+        // match source_num >= self.source.start && source_num < self.source.end {
         match self.source.contains(&source_num) {
             true => Some(source_num + self.offset),
+            false => None,
+        }
+    }
+
+    pub fn map_to_source(&self, dest_num: i64) -> Option<i64> {
+        match self.destination.contains(&dest_num) {
+            true => Some(dest_num + self.dest_offset),
             false => None,
         }
     }
@@ -31,6 +50,7 @@ struct Map {
     ranges: Vec<SourceRange>,
 }
 
+#[allow(dead_code)]
 impl Map {
     pub fn push_ranges(&mut self, range: SourceRange) {
         self.ranges.push(range);
@@ -46,13 +66,23 @@ impl Map {
 
         return source_num;
     }
+
+    pub fn map_to_source(&self, dest_num: i64) -> i64 {
+        for range in &self.ranges {
+            match range.map_to_source(dest_num) {
+                Some(destination) => return destination,
+                None => {}
+            }
+        }
+
+        return dest_num;
+    }
 }
 
 fn parse(lines: Vec<String>) -> (Vec<i64>, Vec<Map>) {
     let numbers_re = Regex::new(r"(\d+) (\d+) (\d+)").unwrap();
-    let mut lines_iter = lines.iter();
 
-    let mut maps: Vec<Map> = Vec::new();
+    let mut lines_iter = lines.iter();
     let seeds: Vec<i64> = lines_iter
         .next()
         .unwrap()
@@ -64,6 +94,7 @@ fn parse(lines: Vec<String>) -> (Vec<i64>, Vec<Map>) {
 
     lines_iter.next(); // ignore blank line after seeds
 
+    let mut maps: Vec<Map> = Vec::new();
     for line in lines_iter {
         let captures: Option<regex::Captures<'_>> = numbers_re.captures(&line);
         match captures {
@@ -91,7 +122,7 @@ fn parse(lines: Vec<String>) -> (Vec<i64>, Vec<Map>) {
 }
 
 fn solve(lines: Vec<String>) -> i64 {
-    let (seeds, maps) = parse(lines);
+    let (seeds, mut maps) = parse(lines);
 
     let seed_ranges: Vec<Range<i64>> = seeds
         .chunks_exact(2)
@@ -107,25 +138,30 @@ fn solve(lines: Vec<String>) -> i64 {
         .collect();
 
     println!("{seed_ranges:?}");
-    let nested_destinations: Vec<Vec<i64>> = seed_ranges
-        .into_iter()
-        .map(|seed_range| {
-            seed_range
-                .into_iter()
-                .map(|seed| {
-                    let mut current = seed;
-                    for map in maps.iter() {
-                        current = map.map_to_destination(current);
-                    }
-                    current
-                })
-                .collect()
-        })
-        .collect();
 
-    let destinations: Vec<i64> = nested_destinations.into_iter().flatten().collect();
+    let mut result: Option<i64> = None;
+    let mut destination: i64 = 0;
+    maps.reverse();
 
-    destinations.into_iter().min().unwrap()
+    while result.is_none() {
+        println!("destination: {destination}");
+
+        let mut current: i64 = destination;
+        for map in maps.iter() {
+            current = map.map_to_source(current);
+        }
+
+        for seed_range in seed_ranges.iter() {
+            if seed_range.contains(&current) {
+                // println!("{current} in {seed_range:?}");
+                result = Some(destination);
+            }
+        }
+
+        destination += 1;
+    }
+
+    result.unwrap()
 }
 
 fn main() {
