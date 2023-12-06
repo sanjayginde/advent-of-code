@@ -1,4 +1,16 @@
-use std::{fs::read_to_string, env};
+use std::{env, fs::read_to_string};
+
+/// Returns a sum of all the numbers passed in
+fn solve(lines: Vec<String>) -> i32 {
+    let mut total = 0;
+    for (pos, line) in lines.iter().enumerate() {
+        match line.parse::<i32>() {
+            Ok(num) => total += num,
+            Err(_) => println!("Error parsing line {}: {}", pos + 1, line),
+        }
+    }
+    total
+}
 
 fn read_lines(filename: &str) -> Vec<String> {
     read_to_string(filename)
@@ -7,22 +19,7 @@ fn read_lines(filename: &str) -> Vec<String> {
         .map(String::from) // make each slice into a string
         .collect() // gather them together into a vector
 }
-
-/// Returns a sum of all the numbers passed in
-/// 
-fn solve(filename: String) -> i32 {
-    let lines = read_lines(&filename);
-    let mut total = 0;
-    for (pos, line) in lines.iter().enumerate() {
-        match line.parse::<i32>()  {
-            Ok(num) => total += num,
-            Err(_) => println!("Error parsing line {}: {}", pos + 1, line),
-        }
-    }
-    total
-}
-
-fn main() {    
+fn main() {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
@@ -30,7 +27,20 @@ fn main() {
         _ => println!(
             "Solution for {} is {}",
             args[1].clone(),
-            solve(args[1].clone())
+            solve(read_lines(&args[1].clone()))
         ),
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::solve;
+
+    #[test]
+    fn solve_example() {
+        let rows = ["7", "9"].map(String::from).to_vec();
+
+        assert_eq!(solve(rows), 16);
     }
 }
