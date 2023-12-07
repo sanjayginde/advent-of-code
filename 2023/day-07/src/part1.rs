@@ -52,6 +52,6 @@ mod test {
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve(rows), 6440);
+        assert_eq!(solve(rows), 5905);
     }
 }

@@ -4,6 +4,9 @@ use strum_macros::EnumString;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, EnumString, Clone, Copy, Hash)]
 pub enum Card {
+    #[strum(serialize = "J")]
+    Joker,
+
     #[strum(serialize = "2")]
     Two,
 
@@ -31,9 +34,8 @@ pub enum Card {
     #[strum(serialize = "T")]
     Ten,
 
-    #[strum(serialize = "J")]
-    Jack,
-
+    // #[strum(serialize = "J")]
+    // Jack,
     #[strum(serialize = "Q")]
     Queen,
 
@@ -59,6 +61,9 @@ impl From<[Card; 5]> for HandRank {
     fn from(cards: [Card; 5]) -> Self {
         let mut map: HashMap<Card, u8> = HashMap::new();
         for card in cards {
+            if card == Card::Joker {
+                continue;
+            }
             match map.get_mut(&card) {
                 Some(val) => {
                     *val += 1;
@@ -80,6 +85,14 @@ impl From<[Card; 5]> for HandRank {
             [1, 2, 2] => HandRank::TwoPair,
             [1, 1, 1, 2] => HandRank::OnePair,
             [1, 1, 1, 1, 1] => HandRank::HighCard,
+
+            // Matches w/ jokers
+            [] | [1] | [2] | [3] | [4] => HandRank::FiveOfAKind,
+            [1, 1] | [1, 2] | [1, 3] => HandRank::FourOfAKind,
+            [1, 1, 1] | [1, 1, 2] => HandRank::ThreeOfAKind,
+            [2, 2] => HandRank::FullHouse,
+            [1, 1, 1, 1] => HandRank::OnePair,
+
             _ => panic!("couldn't find hand type for {counts:?}"),
         };
     }
@@ -169,5 +182,7 @@ mod test {
     fn test_card_eq() {
         assert_eq!(Card::Ace > Card::Nine, true);
         assert_eq!(Card::Three > Card::Queen, false);
+
+        assert_eq!(Card::Joker < Card::Two, true);
     }
 }
