@@ -40,7 +40,7 @@ fn get_num_if_adjacent(num_str: Option<String>, is_adjacent: bool) -> u32 {
     }
 }
 
-fn solve_part1(lines: Vec<String>) -> u32 {
+fn solve(lines: Vec<String>) -> u32 {
     let mut total: u32 = 0;
 
     let rows: Vec<Vec<char>> = lines.iter().map(|line| line.chars().collect()).collect();
@@ -90,7 +90,7 @@ fn main() {
         _ => println!(
             "Solution for part 1 for {} is {}",
             args[1].clone(),
-            solve_part1(read_lines(&args[1].clone()))
+            solve(read_lines(&args[1].clone()))
         ),
     }
 }
@@ -98,7 +98,7 @@ fn main() {
 #[cfg(test)]
 mod test {
 
-    use super::solve_part1;
+    use super::solve;
 
     #[test]
     fn solve_example() {
@@ -117,6 +117,6 @@ mod test {
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve_part1(rows), 4361);
+        assert_eq!(solve(rows), 4361);
     }
 }
