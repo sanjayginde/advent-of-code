@@ -12,7 +12,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 }
 
 fn starts_with_num(s: &str) -> Option<u32> {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(\d+)").unwrap());
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^([0-9]+)").unwrap());
     match RE.captures(s) {
         Some(capture) => Some(capture.get(1).unwrap().as_str().parse::<u32>().unwrap()),
         None => None,
@@ -20,7 +20,7 @@ fn starts_with_num(s: &str) -> Option<u32> {
 }
 
 fn ends_with_num(s: &str) -> Option<u32> {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d+)$").unwrap());
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"([0-9]+)$").unwrap());
     match RE.captures(s) {
         Some(capture) => Some(capture.get(1).unwrap().as_str().parse::<u32>().unwrap()),
         None => None,
@@ -32,7 +32,8 @@ fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<u32> {
         None => {}
         Some(row) => {
             let ch = row.chars().nth(col).unwrap();
-            match ch.is_numeric() {
+            println!("ch: {ch}");
+            match ch.is_ascii_digit() {
                 true => {
                     let (lhs, rhs) = row.split_at(col);
                     let mut result: String = "".to_string();
@@ -74,13 +75,10 @@ fn solve(rows: Vec<String>) -> u32 {
     let mut total: u32 = 0;
 
     println!("num lines: {}", rows.len());
-    // let rows: Vec<Vec<char>> = lines.iter().map(|line| line.chars().collect()).collect();
     for (row_num, row) in rows.iter().enumerate() {
-        // println!("{row_num}");
-        let previous_row = if row_num > 0 {
-            rows.get(row_num - 1)
-        } else {
-            None
+        let previous_row = match row_num > 0 {
+            true => rows.get(row_num - 1),
+            false => None,
         };
         let next_row = rows.get(row_num + 1);
 
@@ -93,12 +91,9 @@ fn solve(rows: Vec<String>) -> u32 {
             adjacent_nums.append(&mut get_adjacent_nums(col_num, previous_row));
             adjacent_nums.append(&mut get_adjacent_nums(col_num, next_row));
 
-            // println!("{adjacent_nums:?}");
-            // let filtered: Vec<_> = adjacent_nums.into_iter().filter_map(|num| num).collect();
-
             if adjacent_nums.len() == 2 {
                 println!("\tFound 2: {adjacent_nums:?}");
-                total += adjacent_nums[0] * adjacent_nums[1];
+                total += adjacent_nums.into_iter().product::<u32>();
             }
         }
     }
@@ -123,25 +118,25 @@ fn main() {
 mod test {
     use super::solve;
 
-    // #[test]
-    // fn solve_example() {
-    //     let rows = [
-    //         "467..114..",
-    //         "...*......",
-    //         "..35..633.",
-    //         "......#...",
-    //         "617*......",
-    //         ".....+.58.",
-    //         "..592.....",
-    //         "......755.",
-    //         "...$.*....",
-    //         ".664.598..",
-    //     ]
-    //     .map(String::from)
-    //     .to_vec();
+    #[test]
+    fn solve_example() {
+        let rows = [
+            "467..114..",
+            "...*......",
+            "..35..633.",
+            "......#...",
+            "617*......",
+            ".....+.58.",
+            "..592.....",
+            "......755.",
+            "...$.*....",
+            ".664.598..",
+        ]
+        .map(String::from)
+        .to_vec();
 
-    //     assert_eq!(solve(rows), 467835);
-    // }
+        assert_eq!(solve(rows), 467835);
+    }
 
     #[test]
     fn solve_example2() {
@@ -150,19 +145,19 @@ mod test {
             "....**..*.",
             ".467*114..",
             "...*.....",
-            "7...7.....",
-            "*.........",
-            "114.......",
+            "7.@.7...8.",
+            "*......*.*",
+            "114....114",
             ".....840..",
-            "79..*.....",
-            "../.460.#.",
+            "79..*...10",
+            "../.460*#.",
         ]
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve(rows), 53238 + 53238 + 53238 + 3269 + 386400 + 798);
-        // assert_eq!(solve(rows), 159714);
-
-        // assert_eq!(solve(rows), 159714 + 218089 + 218089);
+        assert_eq!(
+            solve(rows),
+            53238 + 53238 + 53238 + 3269 + 386400 + 798 + 912 + 912 + 4600
+        );
     }
 }
