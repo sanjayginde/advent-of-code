@@ -11,18 +11,18 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
-fn starts_with_num(s: &str) -> Option<u32> {
+fn starts_with_num(s: &str) -> Option<&str> {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^([0-9]+)").unwrap());
     match RE.captures(s) {
-        Some(capture) => Some(capture.get(1).unwrap().as_str().parse::<u32>().unwrap()),
+        Some(capture) => Some(capture.get(1).unwrap().as_str()),
         None => None,
     }
 }
 
-fn ends_with_num(s: &str) -> Option<u32> {
+fn ends_with_num(s: &str) -> Option<&str> {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"([0-9]+)$").unwrap());
     match RE.captures(s) {
-        Some(capture) => Some(capture.get(1).unwrap().as_str().parse::<u32>().unwrap()),
+        Some(capture) => Some(capture.get(1).unwrap().as_str()),
         None => None,
     }
 }
@@ -32,27 +32,25 @@ fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<u32> {
         None => {}
         Some(row) => {
             let ch = row.chars().nth(col).unwrap();
-            println!("ch: {ch}");
             match ch.is_ascii_digit() {
                 true => {
                     let (lhs, rhs) = row.split_at(col);
                     let mut result: String = "".to_string();
                     match ends_with_num(lhs) {
-                        Some(num) => {
-                            result.push_str(num.to_string().as_str());
+                        Some(num_str) => {
+                            result.push_str(num_str);
                         }
                         None => {}
                     }
 
                     match starts_with_num(rhs) {
-                        Some(num) => {
-                            result.push_str(num.to_string().as_str());
+                        Some(num_str) => {
+                            result.push_str(num_str);
                         }
                         None => {
                             println!("rhs doesn't start with num: {rhs} col:{col}");
                         }
                     }
-                    println!("result: {result}");
 
                     return vec![result.parse::<u32>().unwrap()];
                 }
@@ -62,6 +60,9 @@ fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<u32> {
                     return vec![ends_with_num(lhs), starts_with_num(rhs.get(1..).unwrap())]
                         .into_iter()
                         .filter_map(|v| v)
+                        .collect::<Vec<&str>>()
+                        .into_iter()
+                        .map(|s| s.parse::<u32>().unwrap())
                         .collect();
                 }
             }
@@ -74,7 +75,6 @@ fn get_adjacent_nums(col: usize, row: Option<&String>) -> Vec<u32> {
 fn solve(rows: Vec<String>) -> u32 {
     let mut total: u32 = 0;
 
-    println!("num lines: {}", rows.len());
     for (row_num, row) in rows.iter().enumerate() {
         let previous_row = match row_num > 0 {
             true => rows.get(row_num - 1),
@@ -92,7 +92,6 @@ fn solve(rows: Vec<String>) -> u32 {
             adjacent_nums.append(&mut get_adjacent_nums(col_num, next_row));
 
             if adjacent_nums.len() == 2 {
-                println!("\tFound 2: {adjacent_nums:?}");
                 total += adjacent_nums.into_iter().product::<u32>();
             }
         }
@@ -107,7 +106,7 @@ fn main() {
     match args.len() {
         0..=1 => println!("Pass in filename to solve and part"),
         _ => println!(
-            "Solution for part 1 for {} is {}",
+            "Solution for part 2 for {} is {}",
             args[1].clone(),
             solve(read_lines(&args[1].clone()))
         ),
@@ -151,13 +150,16 @@ mod test {
             ".....840..",
             "79..*...10",
             "../.460*#.",
+            "..903.....",
+            "...*......",
+            "195...94.^",
         ]
         .map(String::from)
         .to_vec();
 
         assert_eq!(
             solve(rows),
-            53238 + 53238 + 53238 + 3269 + 386400 + 798 + 912 + 912 + 4600
+            53238 + 53238 + 53238 + 3269 + 386400 + 798 + 912 + 912 + 4600 + 176085
         );
     }
 }
