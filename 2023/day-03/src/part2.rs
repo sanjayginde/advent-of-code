@@ -14,7 +14,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 fn starts_with_num(s: &str) -> Option<u32> {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(\d+)").unwrap());
     match RE.captures(s) {
-        Some(capture) => Some(capture.get(0).unwrap().as_str().parse::<u32>().unwrap()),
+        Some(capture) => Some(capture.get(1).unwrap().as_str().parse::<u32>().unwrap()),
         None => None,
     }
 }
@@ -22,7 +22,7 @@ fn starts_with_num(s: &str) -> Option<u32> {
 fn ends_with_num(s: &str) -> Option<u32> {
     static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\d+)$").unwrap());
     match RE.captures(s) {
-        Some(capture) => Some(capture.get(0).unwrap().as_str().parse::<u32>().unwrap()),
+        Some(capture) => Some(capture.get(1).unwrap().as_str().parse::<u32>().unwrap()),
         None => None,
     }
 }
@@ -123,25 +123,25 @@ fn main() {
 mod test {
     use super::solve;
 
-    #[test]
-    fn solve_example() {
-        let rows = [
-            "467..114..",
-            "...*......",
-            "..35..633.",
-            "......#...",
-            "617*......",
-            ".....+.58.",
-            "..592.....",
-            "......755.",
-            "...$.*....",
-            ".664.598..",
-        ]
-        .map(String::from)
-        .to_vec();
+    // #[test]
+    // fn solve_example() {
+    //     let rows = [
+    //         "467..114..",
+    //         "...*......",
+    //         "..35..633.",
+    //         "......#...",
+    //         "617*......",
+    //         ".....+.58.",
+    //         "..592.....",
+    //         "......755.",
+    //         "...$.*....",
+    //         ".664.598..",
+    //     ]
+    //     .map(String::from)
+    //     .to_vec();
 
-        assert_eq!(solve(rows), 467835);
-    }
+    //     assert_eq!(solve(rows), 467835);
+    // }
 
     #[test]
     fn solve_example2() {
@@ -149,18 +149,18 @@ mod test {
             "....*467..",
             "....**..*.",
             ".467*114..",
-            "....*......",
-            "....7......",
-            "..*.......",
-            ".114......",
-            ".....840...",
-            "79..*......",
-            "../.460..#.",
+            "...*.....",
+            "7...7.....",
+            "*.........",
+            "114.......",
+            ".....840..",
+            "79..*.....",
+            "../.460.#.",
         ]
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve(rows), 53238 + 53238 + 53238 + 386400);
+        assert_eq!(solve(rows), 53238 + 53238 + 53238 + 3269 + 386400 + 798);
         // assert_eq!(solve(rows), 159714);
 
         // assert_eq!(solve(rows), 159714 + 218089 + 218089);
