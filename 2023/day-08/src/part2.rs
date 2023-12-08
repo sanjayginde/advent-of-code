@@ -2,12 +2,18 @@ pub mod maps;
 use maps::{Node, Route};
 use std::{collections::HashMap, env, fs::read_to_string};
 
-fn parse(lines: Vec<String>) -> (String, HashMap<Node, Route>) {
+fn parse(lines: Vec<String>) -> (String, Vec<Route>, HashMap<Node, Route>) {
     let instructions = lines.get(0).unwrap().trim();
+    let mut starts: Vec<Route> = Vec::new();
     let mut map: HashMap<Node, Route> = HashMap::new();
 
     for line in lines.iter().skip(2) {
         let route = Route::from(line);
+
+        if route.is_part2_start() {
+            starts.push(route.clone());
+        }
+
         match map.insert(route.node.clone(), route) {
             Some(original_route) => {
                 println!("WARNING: replaced node {}", original_route.node);
@@ -15,24 +21,23 @@ fn parse(lines: Vec<String>) -> (String, HashMap<Node, Route>) {
             None => {}
         }
     }
-    (instructions.to_owned(), map)
+
+    (instructions.to_owned(), starts, map)
 }
 
-fn solve(lines: Vec<String>) -> u32 {
-    let mut steps: u32 = 0;
-
-    let (instructions, map) = parse(lines);
-    let chars = instructions.as_bytes();
-
+fn calc_steps(start: Route, instrs: &[u8], map: &HashMap<Node, Route>) -> u64 {
+    let mut steps: u64 = 0;
     let mut pos: usize = 0;
 
-    let mut route = map.get("AAA").unwrap();
-    while !route.is_part1_end() {
-        if pos >= instructions.len() {
+    let mut route: &Route = &start;
+    while !route.is_part2_end() {
+        if pos >= instrs.len() {
             pos = 0;
         }
 
-        route = match chars[pos] {
+        let instruction = instrs[pos];
+
+        route = match instruction {
             b'R' => map.get(&route.right).unwrap(),
             b'L' => map.get(&route.left).unwrap(),
             i => panic!("Invalid instruction found: {i}"),
@@ -43,6 +48,35 @@ fn solve(lines: Vec<String>) -> u32 {
     }
 
     steps
+}
+
+// Reference: https://github.com/TheAlgorithms/Rust/blob/master/src/math/lcm_of_n_numbers.rs
+pub fn lcm(nums: Vec<u64>) -> u64 {
+    if nums.len() == 1 {
+        return nums[0];
+    }
+    let a = nums[0];
+    let b = lcm(nums.iter().cloned().skip(1).collect());
+    a * b / gcd(a, b)
+}
+
+fn gcd(a: u64, b: u64) -> u64 {
+    match b == 0 {
+        true => a,
+        false => gcd(b, a % b),
+    }
+}
+
+fn solve(lines: Vec<String>) -> u64 {
+    let (instructions, starts, map) = parse(lines);
+    let instrs: &[u8] = instructions.as_bytes();
+
+    let steps: Vec<_> = starts
+        .iter()
+        .map(|start| calc_steps(start.to_owned(), instrs, &map))
+        .collect();
+
+    lcm(steps)
 }
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -74,30 +108,16 @@ mod test {
     #[test]
     fn solve_example() {
         let rows = [
-            "RL",
+            "LR",
             "",
-            "AAA = (BBB, CCC)",
-            "BBB = (DDD, EEE)",
-            "CCC = (ZZZ, GGG)",
-            "DDD = (DDD, DDD)",
-            "EEE = (EEE, EEE)",
-            "GGG = (GGG, GGG)",
-            "ZZZ = (ZZZ, ZZZ)",
-        ]
-        .map(String::from)
-        .to_vec();
-
-        assert_eq!(solve(rows), 2);
-    }
-
-    #[test]
-    fn solve_example2() {
-        let rows = [
-            "LLR",
-            "",
-            "AAA = (BBB, BBB)",
-            "BBB = (AAA, ZZZ)",
-            "ZZZ = (ZZZ, ZZZ)",
+            "11A = (11B, XXX)",
+            "11B = (XXX, 11Z)",
+            "11Z = (11B, XXX)",
+            "22A = (22B, XXX)",
+            "22B = (22C, 22C)",
+            "22C = (22Z, 22Z)",
+            "22Z = (22B, 22B)",
+            "XXX = (XXX, XXX)",
         ]
         .map(String::from)
         .to_vec();
