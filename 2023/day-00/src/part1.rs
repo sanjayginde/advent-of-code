@@ -19,6 +19,7 @@ fn read_lines(filename: &str) -> Vec<String> {
         .map(String::from) // make each slice into a string
         .collect() // gather them together into a vector
 }
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
