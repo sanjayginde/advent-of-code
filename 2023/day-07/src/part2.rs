@@ -1,6 +1,6 @@
-pub mod cardsv1;
+pub mod cardsv2;
 
-use cardsv1::Hand;
+use cardsv2::Hand;
 use std::{env, fs::read_to_string};
 
 fn solve(lines: Vec<String>) -> u32 {
@@ -52,6 +52,6 @@ mod test {
         .map(String::from)
         .to_vec();
 
-        assert_eq!(solve(rows), 6440);
+        assert_eq!(solve(rows), 5905);
     }
 }
