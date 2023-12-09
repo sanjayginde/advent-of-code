@@ -1,22 +1,28 @@
 pub mod maps;
-use maps::{Node, Route};
+use maps::{Node, Part2Node, Route};
 use std::{collections::HashMap, env, fs::read_to_string};
 
-fn parse(lines: Vec<String>) -> (String, Vec<Route>, HashMap<Node, Route>) {
+fn parse(
+    lines: Vec<String>,
+) -> (
+    String,
+    Vec<Route<Part2Node>>,
+    HashMap<Part2Node, Route<Part2Node>>,
+) {
     let instructions = lines.get(0).unwrap().trim();
-    let mut starts: Vec<Route> = Vec::new();
-    let mut map: HashMap<Node, Route> = HashMap::new();
+    let mut starts: Vec<Route<Part2Node>> = Vec::new();
+    let mut map: HashMap<Part2Node, Route<Part2Node>> = HashMap::new();
 
     for line in lines.iter().skip(2) {
-        let route = Route::from(line);
+        let route: Route<Part2Node> = Route::from(line);
 
-        if route.is_part2_start() {
+        if route.node.is_start() {
             starts.push(route.clone());
         }
 
-        match map.insert(route.node.clone(), route) {
+        match map.insert(route.node, route) {
             Some(original_route) => {
-                println!("WARNING: replaced node {}", original_route.node);
+                println!("WARNING: replaced node {:?}", original_route.node);
             }
             None => {}
         }
@@ -25,12 +31,16 @@ fn parse(lines: Vec<String>) -> (String, Vec<Route>, HashMap<Node, Route>) {
     (instructions.to_owned(), starts, map)
 }
 
-fn calc_steps(start: Route, instrs: &[u8], map: &HashMap<Node, Route>) -> u64 {
+fn calc_steps(
+    start: Route<Part2Node>,
+    instrs: &[u8],
+    map: &HashMap<Part2Node, Route<Part2Node>>,
+) -> u64 {
     let mut steps: u64 = 0;
     let mut pos: usize = 0;
 
-    let mut route: &Route = &start;
-    while !route.is_part2_end() {
+    let mut route = &start;
+    while !route.node.is_end() {
         if pos >= instrs.len() {
             pos = 0;
         }
