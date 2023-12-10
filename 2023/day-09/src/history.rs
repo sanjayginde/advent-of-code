@@ -18,6 +18,13 @@ impl History {
     pub fn next_value(&self) -> i64 {
         find_next_value(self.values())
     }
+
+    pub fn prev_value(&self) -> i64 {
+        let mut reverse = self.values().clone();
+        reverse.reverse();
+
+        find_next_value(reverse.as_ref())
+    }
 }
 
 fn find_next_value(values: &Vec<i64>) -> i64 {
@@ -90,5 +97,14 @@ mod test {
     fn next_value(#[case] values: &str, #[case] expected: i64) {
         let history = History::from(&values.to_string());
         assert_eq!(history.next_value(), expected);
+    }
+
+    #[rstest]
+    #[case("0 3 6 9 12 15", -3)]
+    #[case("1 3 6 10 15 21", 0)]
+    #[case("10 13 16 21 30 45", 5)]
+    fn prev_value(#[case] values: &str, #[case] expected: i64) {
+        let history = History::from(&values.to_string());
+        assert_eq!(history.prev_value(), expected);
     }
 }
