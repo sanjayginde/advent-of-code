@@ -1,16 +1,16 @@
 pub mod maps;
-use maps::{Node, Route};
+use maps::{Node, Part1Node, Route, START_NODE_PART_1};
 use std::{collections::HashMap, env, fs::read_to_string};
 
-fn parse(lines: Vec<String>) -> (String, HashMap<Node, Route>) {
+fn parse(lines: Vec<String>) -> (String, HashMap<Part1Node, Route<Part1Node>>) {
     let instructions = lines.get(0).unwrap().trim();
-    let mut map: HashMap<Node, Route> = HashMap::new();
+    let mut map: HashMap<Part1Node, Route<Part1Node>> = HashMap::new();
 
     for line in lines.iter().skip(2) {
-        let route = Route::from(line);
+        let route: Route<Part1Node> = Route::from(line);
         match map.insert(route.node.clone(), route) {
             Some(original_route) => {
-                println!("WARNING: replaced node {}", original_route.node);
+                println!("WARNING: replaced node {:?}", original_route.node);
             }
             None => {}
         }
@@ -26,8 +26,8 @@ fn solve(lines: Vec<String>) -> u32 {
 
     let mut pos: usize = 0;
 
-    let mut route = map.get("AAA").unwrap();
-    while !route.is_part1_end() {
+    let mut route = map.get(&START_NODE_PART_1).unwrap();
+    while !route.node.is_end() {
         if pos >= instructions.len() {
             pos = 0;
         }

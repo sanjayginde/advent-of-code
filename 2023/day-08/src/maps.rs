@@ -1,57 +1,105 @@
-pub type Node = String;
+// pub type Node = [char; 3];
+
+pub trait Node {
+    fn new(value: [char; 3]) -> Self;
+
+    fn value(&self) -> [char; 3];
+
+    fn is_start(&self) -> bool;
+
+    fn is_end(&self) -> bool;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Part1Node {
+    value: [char; 3],
+}
+
+impl Node for Part1Node {
+    fn new(value: [char; 3]) -> Self {
+        Self { value }
+    }
+
+    fn value(&self) -> [char; 3] {
+        self.value
+    }
+
+    fn is_start(&self) -> bool {
+        self.value == START_NODE_PART_1.value()
+    }
+
+    fn is_end(&self) -> bool {
+        self.value == ['Z', 'Z', 'Z']
+    }
+}
+
+pub const START_NODE_PART_1: Part1Node = Part1Node {
+    value: ['A', 'A', 'A'],
+};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Part2Node {
+    value: [char; 3],
+}
+
+impl Node for Part2Node {
+    fn new(value: [char; 3]) -> Self {
+        Self { value }
+    }
+
+    fn value(&self) -> [char; 3] {
+        self.value
+    }
+
+    fn is_start(&self) -> bool {
+        self.value[2] == 'A'
+    }
+
+    fn is_end(&self) -> bool {
+        self.value[2] == 'Z'
+    }
+}
 
 #[derive(Debug, Clone, Hash)]
-pub struct Route {
-    pub node: Node,
-    pub left: Node,
-    pub right: Node,
-    is_part1_end: bool,
-    is_part2_start: bool,
-    is_part2_end: bool,
+pub struct Route<T: Node> {
+    pub node: T,
+    pub left: T,
+    pub right: T,
 }
 
-impl Route {
-    pub fn new(node: Node, left: Node, right: Node) -> Self {
-        // let ch = node.clone().chars().nth(2).unwrap();
-        let is_part1_end = node.clone() == "ZZZ";
-        let is_part2_start = node.clone().ends_with("A");
-        let is_part2_end = node.clone().ends_with("Z");
-
-        Route {
-            node,
-            left,
-            right,
-            is_part1_end,
-            is_part2_start,
-            is_part2_end,
-        }
-    }
-
-    pub fn is_part1_end(&self) -> bool {
-        self.node == "ZZZ"
-    }
-
-    pub fn is_part2_start(&self) -> bool {
-        self.is_part2_start
-    }
-
-    pub fn is_part2_end(&self) -> bool {
-        self.is_part2_end
+impl<T: Node> Route<T> {
+    pub fn new(node: T, left: T, right: T) -> Self {
+        Route { node, left, right }
     }
 }
 
-impl From<&String> for Route {
+impl<T: Node> From<&String> for Route<T> {
     // ZZZ = (ZZZ, ZZZ)"
     fn from(value: &String) -> Self {
+        let mut node = value[..3].chars().into_iter();
+        let mut left = value[7..10].chars();
+        let mut right = value[12..15].chars();
         Route::new(
-            value[..3].to_string(),
-            value[7..10].to_string(),
-            value[12..15].to_string(),
+            T::new([
+                node.next().unwrap(),
+                node.next().unwrap(),
+                node.next().unwrap(),
+            ]),
+            T::new([
+                left.next().unwrap(),
+                left.next().unwrap(),
+                left.next().unwrap(),
+            ]),
+            T::new([
+                right.next().unwrap(),
+                right.next().unwrap(),
+                right.next().unwrap(),
+            ]),
         )
     }
 }
 
-impl From<String> for Route {
+impl<T: Node> From<String> for Route<T> {
     // ZZZ = (ZZZ, ZZZ)"
     fn from(value: String) -> Self {
         Route::from(&value)
@@ -60,33 +108,33 @@ impl From<String> for Route {
 
 #[cfg(test)]
 mod test {
-    use super::Route;
+    use super::{Node, Part1Node, Part2Node, Route};
 
     #[test]
     fn route_from_string() {
         let rows = ["BHK = (GRP, RXF)"].map(String::from).to_vec();
 
-        let route = Route::from(rows[0].clone());
+        let route: Route<Part1Node> = Route::from(rows[0].clone());
 
         println!("{:?}", route);
-        assert_eq!(route.node, "BHK");
-        assert_eq!(route.left, "GRP");
-        assert_eq!(route.right, "RXF");
+        assert_eq!(route.node.value(), ['B', 'H', 'K']);
+        assert_eq!(route.left.value(), ['G', 'R', 'P']);
+        assert_eq!(route.right.value(), ['R', 'X', 'F']);
     }
 
     #[test]
-    fn part2_start_end() {
+    fn part_2_node() {
         let rows = ["HFA = (GRP, RXF)", "HBZ = (HDI, AIN)"]
             .map(String::from)
             .to_vec();
 
-        let start = Route::from(rows[0].clone());
+        let start: Route<Part2Node> = Route::from(rows[0].clone());
 
-        assert_eq!(start.is_part2_start(), true);
-        assert_eq!(start.is_part2_end(), false);
+        assert_eq!(start.node.is_start(), true);
+        assert_eq!(start.node.is_end(), false);
 
-        let end = Route::from(rows[1].clone());
-        assert_eq!(end.is_part2_start(), false);
-        assert_eq!(end.is_part2_end(), true);
+        let end: Route<Part2Node> = Route::from(rows[1].clone());
+        assert_eq!(end.node.is_start(), false);
+        assert_eq!(end.node.is_end(), true);
     }
 }
