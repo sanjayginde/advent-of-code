@@ -1,4 +1,4 @@
-use std::{env, fs::read_to_string};
+use std::fs::read_to_string;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Galaxy {
@@ -8,6 +8,9 @@ pub struct Galaxy {
 }
 
 impl Galaxy {
+    pub fn new(id: usize, row: usize, col: usize) -> Self {
+        Galaxy { id, row, col }
+    }
     pub fn id(&self) -> usize {
         self.id
     }
@@ -19,12 +22,73 @@ impl Galaxy {
     pub fn col(&self) -> usize {
         self.col
     }
+}
 
-    pub fn distance(&self, galaxy: &Galaxy) -> usize {
-        let row_dff = galaxy.row().abs_diff(self.row());
-        let col_diff = galaxy.col().abs_diff(self.col());
+#[derive(Debug)]
+pub struct Universe {
+    expanded_rows: Vec<usize>,
+    expanded_cols: Vec<usize>,
+    expand_factor: usize,
+    galaxies: Vec<Galaxy>,
+}
 
-        row_dff + col_diff
+impl Universe {
+    pub fn new(expand_factor: usize) -> Self {
+        Universe {
+            expanded_rows: Vec::new(),
+            expanded_cols: Vec::new(),
+            expand_factor,
+            galaxies: Vec::new(),
+        }
+    }
+
+    pub fn is_expanded_row(&self, r: usize) -> bool {
+        self.expanded_rows.contains(&r)
+    }
+
+    pub fn is_expanded_col(&self, c: usize) -> bool {
+        self.expanded_cols.contains(&c)
+    }
+
+    pub fn add_expanded_row(&mut self, r: usize) {
+        self.expanded_rows.push(r)
+    }
+
+    pub fn add_expanded_col(&mut self, c: usize) {
+        self.expanded_cols.push(c)
+    }
+
+    pub fn add_galaxy(&mut self, galaxy: Galaxy) {
+        self.galaxies.push(galaxy)
+    }
+    pub fn galaxies(&self) -> &Vec<Galaxy> {
+        &self.galaxies
+    }
+
+    pub fn distance(&self, lhs: &Galaxy, rhs: &Galaxy) -> usize {
+        let mut rows = vec![lhs.row(), rhs.row()];
+        rows.sort();
+
+        let mut cols = vec![lhs.col(), rhs.col()];
+        cols.sort();
+
+        let mut row_diff = 0;
+        for r in (rows[0]..rows[1]).into_iter() {
+            row_diff += match self.is_expanded_row(r) {
+                true => self.expand_factor,
+                false => 1,
+            }
+        }
+
+        let mut col_diff = 0;
+        for c in (cols[0]..cols[1]).into_iter() {
+            col_diff += match self.is_expanded_col(c) {
+                true => self.expand_factor,
+                false => 1,
+            }
+        }
+
+        row_diff + col_diff
     }
 }
 
@@ -42,61 +106,52 @@ fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
         .collect()
 }
 
-fn expand(lines: Vec<String>) -> Vec<Vec<char>> {
-    // Expand empty rows
-    let mut expand_rows: Vec<Vec<char>> = Vec::new();
-    for line in lines.iter() {
-        if line.chars().all(|ch| ch == '.') {
-            expand_rows.push(line.chars().collect());
-        }
+fn parse(lines: Vec<String>, expand_factor: usize) -> Universe {
+    let mut universe: Universe = Universe::new(expand_factor);
 
-        expand_rows.push(line.chars().collect());
-    }
-
-    // Expand empty columns (via transpose)
-    let mut expand_columns: Vec<Vec<char>> = Vec::new();
-    for col in transpose(expand_rows).into_iter() {
-        if col.clone().into_iter().all(|ch| ch == '.') {
-            expand_columns.push(col.clone());
-        }
-        expand_columns.push(col);
-    }
-
-    transpose(expand_columns)
-}
-
-fn parse(lines: Vec<String>) -> Vec<Galaxy> {
-    let mut result = Vec::new();
-
+    let mut matrix: Vec<Vec<char>> = Vec::new();
     let mut galaxy_id = 1;
-    for (row, line) in expand(lines).into_iter().enumerate() {
-        for (col, ch) in line.into_iter().enumerate() {
-            // println!("char: {ch}");
-            if ch == '#' {
-                result.push(Galaxy {
-                    id: galaxy_id,
-                    row,
-                    col,
-                });
+
+    for (r, line) in lines.iter().enumerate() {
+        let chars: Vec<_> = line.chars().collect();
+        for (c, ch) in chars.iter().enumerate() {
+            if *ch == '#' {
+                universe.add_galaxy(Galaxy::new(galaxy_id, r, c));
                 galaxy_id += 1;
             }
         }
+        if line.chars().all(|ch| ch == '.') {
+            universe.add_expanded_row(r);
+        }
+
+        matrix.push(line.chars().collect());
     }
 
-    result
+    for (i, col) in transpose(matrix).iter().enumerate() {
+        if col.clone().into_iter().all(|ch| ch == '.') {
+            universe.add_expanded_col(i);
+        }
+    }
+
+    universe
 }
 
-fn solve(lines: Vec<String>) -> usize {
+fn solve(lines: Vec<String>, expand_factor: usize) -> usize {
     let mut total = 0;
 
-    let galaxies = parse(lines);
+    let universe = parse(lines, expand_factor);
+
+    // println!("universe: {:?}", universe);
+    // println!("galaxies: {:?}", galaxies);
+
+    let galaxies = universe.galaxies();
 
     let mut galaxy = galaxies.get(0);
     let mut skip = 1;
     while galaxy.is_some() {
         let lhs = galaxy.unwrap();
         for rhs in galaxies.iter().skip(skip) {
-            total += lhs.distance(rhs);
+            total += universe.distance(lhs, rhs);
         }
         galaxy = galaxies.get(skip);
         skip += 1;
@@ -106,22 +161,22 @@ fn solve(lines: Vec<String>) -> usize {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    match args.len() {
-        0..=1 => println!("Pass in filename to solve"),
-        _ => println!(
-            "Solution for {} is {}",
-            args[1].clone(),
-            solve(read_lines(&args[1].clone()))
-        ),
-    }
+    println!(
+        "Solution for part 1 is {}",
+        solve(read_lines("input.txt"), 2)
+    );
+    println!(
+        "Solution for part 2 is {}",
+        solve(read_lines("input.txt"), 1000000)
+    );
 }
 
 #[cfg(test)]
 mod test {
 
-    use super::*;
+    use rstest::rstest;
+
+    use super::solve;
 
     const EXAMPLE: [&str; 10] = [
         "...#......",
@@ -136,18 +191,21 @@ mod test {
         "#...#.....",
     ];
 
-    #[test]
-    fn solve_example() {
+    #[rstest]
+    #[case(2, 374)]
+    #[case(10, 1030)]
+    #[case(100, 8410)]
+    fn solve_example(#[case] expand_factor: usize, #[case] expected: usize) {
         let rows = EXAMPLE.map(String::from).to_vec();
 
-        assert_eq!(solve(rows), 374);
+        assert_eq!(solve(rows, expand_factor), expected);
     }
 }
 
 fn read_lines(filename: &str) -> Vec<String> {
     read_to_string(filename)
-        .unwrap() // panic on possible file-reading errors
-        .lines() // split the string into an iterator of string slices
-        .map(String::from) // make each slice into a string
-        .collect() // gather them together into a vector
+        .unwrap()
+        .lines()
+        .map(String::from)
+        .collect()
 }
