@@ -23,7 +23,7 @@ impl Row {
 
         // println!("regex: {regex}");
 
-        let arrangements_pattern = match Regex::new(regex.as_str()) {
+        let arrangements_pattern: Regex = match Regex::new(regex.as_str()) {
             Ok(regex) => regex,
             Err(err) => panic!("Error creating regex from {regex}: {err}"),
         };
@@ -48,14 +48,8 @@ impl Row {
 
         // println!("# combos: {}", combinations.len());
         // println!("combos: {:?}", combinations);
-        combinations.len()
 
-        // combinations.into_iter().fold(0, |acc, combo| {
-        //     match self.arrangements_pattern.is_match(combo.as_str()) {
-        //         true => acc + 1,
-        //         false => acc,
-        //     }
-        // })
+        combinations.len()
     }
 
     fn generate_combinations(&self, lhs: String, rhs: String) -> Vec<String> {
@@ -63,26 +57,27 @@ impl Row {
             .arrangements_pattern
             .is_match(format!("{lhs}{rhs}").as_str())
         {
-            // println!("nomatch: {lhs}{rhs}");
             return vec![];
         }
 
         match rhs.split_once("?") {
-            None => vec![format!("{lhs}{rhs}")],
+            None => {
+                vec![format!("{lhs}{rhs}")]
+            }
             Some((l, r)) => {
                 let mut result: Vec<String> = Vec::new();
                 for combo in self
                     .generate_combinations(format!("{lhs}{l}"), format!("#{r}"))
                     .into_iter()
                 {
-                    result.push(format!("{lhs}{l}{combo}"));
+                    result.push(combo);
                 }
 
                 for combo in self
                     .generate_combinations(format!("{lhs}{l}"), format!(".{r}"))
                     .into_iter()
                 {
-                    result.push(format!("{lhs}{l}{combo}"));
+                    result.push(combo);
                 }
 
                 result
