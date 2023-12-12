@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::fs::read_to_string;
 
 use springs::Row;
@@ -19,13 +17,12 @@ fn main() {
     let rows = parse(read_lines("input.txt"));
 
     println!("Solution for part 1 is {}", solve(rows));
-    // println!("Solution for part 2 is {}", solve(&universe, 1000000));
 }
 
 #[cfg(test)]
 mod test {
 
-    // use super::{parse, solve};
+    use super::{parse, solve};
 
     const EXAMPLE: [&str; 6] = [
         "???.### 1,1,3",
@@ -36,12 +33,12 @@ mod test {
         "?###???????? 3,2,1",
     ];
 
-    // #[test]
-    // fn solve_example() {
-    //     let rows = parse(EXAMPLE.map(String::from).to_vec());
+    #[test]
+    fn solve_example() {
+        let rows = parse(EXAMPLE.map(String::from).to_vec());
 
-    //     assert_eq!(solve(rows), 21);
-    // }
+        assert_eq!(solve(rows), 21);
+    }
 }
 
 fn read_lines(filename: &str) -> Vec<String> {
