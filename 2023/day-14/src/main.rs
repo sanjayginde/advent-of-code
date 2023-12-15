@@ -83,7 +83,7 @@ mod test {
     ];
 
     #[test]
-    fn solve_example_vertical() {
+    fn solve_example() {
         let dish: Dish = parse(EXAMPLE.map(String::from).to_vec());
         assert_eq!(solve_part1(dish), 136);
     }
