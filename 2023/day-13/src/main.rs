@@ -1,4 +1,4 @@
-use itertools::diff_with;
+use itertools::{diff_with, Itertools};
 use std::fs::read_to_string;
 use Orientation::*;
 
@@ -78,39 +78,102 @@ fn diff(pattern: &Pattern, pos: usize) -> Option<usize> {
 }
 
 fn calc(pattern: Pattern, orientation: Orientation) -> Option<usize> {
-    for (pos, _rows) in pattern.windows(2).into_iter().enumerate() {
+    let windows: Vec<_> = pattern.windows(2).into_iter().enumerate().collect_vec();
+
+    let mid = windows.len() / 2;
+
+    for (pos, _rows) in windows.clone().into_iter().skip(mid - 1) {
         match diff(&pattern, pos) {
             Some(pivot) => return Some(orientation.multiply(pivot)),
             None => {}
         }
     }
 
+    for (pos, _rows) in windows.into_iter().rev().skip(mid) {
+        match diff(&pattern, pos) {
+            Some(pivot) => return Some(orientation.multiply(pivot)),
+            None => {}
+        }
+    }
+
+    // for (pos, _rows) in pattern.windows(2).into_iter().enumerate() {
+    //     match diff(&pattern, pos) {
+    //         Some(pivot) => return Some(orientation.multiply(pivot)),
+    //         None => {}
+    //     }
+    // }
+
     return None;
+}
+
+fn check_for_match(pattern: Pattern) -> Option<usize> {
+    match calc(pattern.clone(), Horizontal) {
+        Some(value) => Some(value),
+
+        None => {
+            let transposed_pattern = transpose(pattern.clone());
+            match calc(transposed_pattern, Vertical) {
+                Some(value) => Some(value),
+                None => None,
+            }
+        }
+    }
 }
 
 fn solve_part1(patterns: Vec<Pattern>) -> usize {
     let mut total: usize = 0;
     println!("num patterns: {}", patterns.len());
-    for (pos, pattern) in patterns.into_iter().enumerate() {
-        match calc(pattern.clone(), Horizontal) {
-            Some(value) => {
-                println!("Horizonal mirror found for {pos}: {value}");
-                total += value;
-            }
+    for pattern in patterns.into_iter() {
+        match check_for_match(pattern) {
+            Some(value) => total += value,
+            None => {}
+        }
+    }
 
-            None => {
-                let transposed_pattern = transpose(pattern.clone());
-                match calc(transposed_pattern, Vertical) {
-                    Some(value) => {
-                        println!("Vertical mirror found for {pos}: {value}");
-                        total += value;
-                    }
-                    None => {
-                        println!("No mirror found for {pos}");
-                        println!("{pattern:?}");
-                        println!("");
+    total
+}
+
+fn swap_at(pattern: &mut Pattern, row: usize, col: usize) {
+    let val = pattern[row][col];
+    match val == '#' {
+        true => pattern[row][col] = '.',
+        false => pattern[row][col] = '#',
+    }
+}
+
+fn look_for_smudge(pattern: Pattern) -> Option<usize> {
+    let prev_value = check_for_match(pattern.clone()).unwrap();
+
+    for (row_num, row) in pattern.iter().enumerate() {
+        for (col_num, _) in row.iter().enumerate() {
+            let mut new_pattern = pattern.clone();
+
+            swap_at(&mut new_pattern, row_num, col_num);
+            match check_for_match(new_pattern.clone()) {
+                Some(value) => {
+                    if value != prev_value {
+                        println!("Found smudge at {row_num} x {col_num}");
+                        return Some(value);
                     }
                 }
+                None => {}
+            }
+            swap_at(&mut new_pattern, row_num, col_num);
+        }
+    }
+
+    // Some(prev_value)
+    None
+}
+
+fn solve_part2(patterns: Vec<Pattern>) -> usize {
+    let mut total: usize = 0;
+    println!("num patterns: {}", patterns.len());
+    for (pos, pattern) in patterns.into_iter().enumerate() {
+        match look_for_smudge(pattern) {
+            Some(value) => total += value,
+            None => {
+                println!("Couldn't find smudge for {pos}")
             }
         }
     }
@@ -121,13 +184,14 @@ fn solve_part1(patterns: Vec<Pattern>) -> usize {
 fn main() {
     let patterns: Vec<Pattern> = parse(read_lines("input.txt"));
 
-    println!("Solution for part 1 is {}", solve_part1(patterns));
+    println!("Solution for part 1 is {}", solve_part1(patterns.clone()));
+    println!("Solution for part 2 is {}", solve_part2(patterns));
 }
 
 #[cfg(test)]
 mod test {
 
-    use super::{parse_pattern, solve_part1, Pattern};
+    use super::{parse_pattern, solve_part1, solve_part2, Pattern};
 
     const EXAMPLE_VERTICAL: [&str; 7] = [
         "#.##..##.",
@@ -180,6 +244,14 @@ mod test {
         let pattern: Pattern = parse_pattern(HORIZONTAL_2.map(String::from).to_vec());
 
         assert_eq!(solve_part1(vec![pattern]), 600);
+    }
+
+    #[test]
+    fn solve_example_part2() {
+        let pattern1: Pattern = parse_pattern(EXAMPLE_VERTICAL.map(String::from).to_vec());
+        let pattern2: Pattern = parse_pattern(EXAMPLE_HORIZONTAL.map(String::from).to_vec());
+
+        assert_eq!(solve_part2(vec![pattern1, pattern2]), 400);
     }
 }
 
