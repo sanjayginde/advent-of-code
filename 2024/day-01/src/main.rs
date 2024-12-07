@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{collections::HashMap, fs::read_to_string};
 
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Row {
@@ -19,6 +19,16 @@ impl From<&String> for Row {
 pub struct Lists {
     first: Vec<i64>,
     second: Vec<i64>,
+}
+
+impl Lists {
+    pub fn first(&self) -> &Vec<i64> {
+        &self.first
+    }
+
+    pub fn second(&self) -> &Vec<i64> {
+        &self.second
+    }
 }
 
 impl From<Vec<Row>> for Lists {
@@ -61,8 +71,47 @@ fn part1(lines: Vec<String>) -> usize {
     })
 }
 
-fn part2(_lines: Vec<String>) -> i32 {
-    todo!();
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+struct Counter {
+    amount: usize,
+}
+
+impl Counter {
+    fn new() -> Self {
+        Self { amount: 0 }
+    }
+
+    fn increment(&mut self) {
+        self.amount += 1;
+    }
+
+    fn amount(&self) -> usize {
+        self.amount
+    }
+}
+
+impl Default for Counter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+fn part2(lines: Vec<String>) -> usize {
+    let lists: Lists = Lists::from(lines.iter().map(Row::from).collect::<Vec<_>>());
+
+    let mut counts: HashMap<i64, Counter> = HashMap::new();
+
+    for &number in lists.second() {
+        counts.entry(number).or_default().increment();
+    }
+
+    let mut result: usize = 0;
+    for &number in lists.first() {
+        if let Some(counter) = counts.get(&number) {
+            result += number as usize * counter.amount();
+        }
+    }
+    result
 }
 
 fn main() {
