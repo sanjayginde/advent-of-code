@@ -13,6 +13,31 @@ fn get_direction(lhs: i64, rhs: i64) -> Direction {
     }
 }
 
+fn is_safe(levels: &[i64]) -> bool {
+    let initial_direction: Direction = get_direction(levels[0], levels[1]);
+
+    let mut current = levels[0];
+    for (i, &next) in levels.iter().enumerate().skip(1) {
+        let diff = (next - current).unsigned_abs();
+        let dir = get_direction(current, next);
+        match diff {
+            1..=3 => match dir == initial_direction {
+                false => {
+                    println!("direction mismatch at index {}", i);
+                    return false;
+                }
+                true => {}
+            },
+            d => {
+                println!("{} difference at index {}", d, i);
+                return false;
+            }
+        }
+        current = next
+    }
+    true
+}
+
 #[derive(Debug)]
 struct Report {
     levels: Vec<i64>,
@@ -20,31 +45,23 @@ struct Report {
 
 impl Report {
     fn safe(&self) -> bool {
-        let initial_direction: Direction = get_direction(self.levels[0], self.levels[1]);
+        is_safe(&self.levels)
+    }
 
-        let mut current = self.levels[0];
-        for i in 1..self.levels.len() {
-            let next: i64 = self.levels[i];
-            let diff = (next - current).unsigned_abs();
-            let dir = get_direction(current, next);
-            match diff {
-                1..=3 => match dir == initial_direction {
-                    false => {
-                        println!("direction mismatch at index {}", i);
-                        return false;
-                    }
-                    true => {}
-                },
-                d => {
-                    println!("{} difference at index {}", d, i);
-                    return false;
-                }
-            }
-
-            current = next
+    fn safe_with_dampener(&self) -> bool {
+        if is_safe(&self.levels) {
+            return true;
         }
 
-        true
+        for i in 0..self.levels.len() {
+            let mut temp = self.levels.clone();
+            temp.remove(i);
+            if is_safe(&temp) {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -78,12 +95,26 @@ fn part1(lines: Vec<String>) -> usize {
 }
 
 fn part2(lines: Vec<String>) -> usize {
-    todo!()
+    let reports = lines.iter().map(Report::from).collect::<Vec<_>>();
+
+    println!("Num reports: {:?}", reports.len());
+
+    let mut result = 0;
+    for report in reports {
+        let is_safe = report.safe() || report.safe_with_dampener();
+        if is_safe {
+            result += 1;
+        }
+
+        println!("\t{:?}: {:?}", report.levels, is_safe);
+    }
+
+    result
 }
 
 fn main() {
     println!("Solution for part 1 is {}", part1(read_lines("input.txt")));
-    // println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
+    println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
 }
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -113,9 +144,8 @@ mod test {
         assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 2);
     }
 
-    // #[test]
-    // fn solve_example_part2() {
-    //     todo!()
-    //     // assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 0);
-    // }
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 4);
+    }
 }
