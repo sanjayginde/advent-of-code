@@ -67,7 +67,7 @@ fn part1(lines: Vec<String>) -> usize {
 
     lists.into_iter().fold(0usize, |acc, (first, second)| {
         let diff: i64 = second - first;
-        acc + diff.abs() as usize
+        acc + diff.unsigned_abs() as usize
     })
 }
 
