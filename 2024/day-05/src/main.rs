@@ -77,7 +77,7 @@ impl InputData {
     }
 }
 
-fn validate_update(update: &[u64], ordering_rules: &OrderingRules) -> bool {
+fn is_valid_update(update: &[u64], ordering_rules: &OrderingRules) -> bool {
     for (i, &page) in update.iter().enumerate() {
         let subslice = &update[i + 1..];
         if !ordering_rules.is_in_valid_order(page, subslice) {
@@ -88,36 +88,55 @@ fn validate_update(update: &[u64], ordering_rules: &OrderingRules) -> bool {
     true
 }
 
+fn fix_update<'a>(update: &'a mut Vec<u64>, ordering_rules: &OrderingRules) -> &'a mut Vec<u64> {
+    for i in (0..update.len()).step_by(1) {
+        let page = update[i];
+        let next_page = safe_subslice(update, i + 1, i + 2);
+        if !ordering_rules.is_in_valid_order(page, next_page) {
+            // Swap the pages
+            update[i] = next_page[0];
+            update[i + 1] = page;
+        }
+    }
+
+    if is_valid_update(update, ordering_rules) {
+        update
+    } else {
+        fix_update(update, ordering_rules)
+    }
+}
+
 fn get_middle_element<T>(vec: &[T]) -> Option<&T> {
     if vec.is_empty() {
         None
     } else {
-        Some(&vec[vec.len() / 2]) // Middle index is `len / 2`
+        Some(&vec[vec.len() / 2])
     }
 }
 
-fn part1(lines: Vec<String>) -> u64 {
-    let mut result = 0;
+fn solve(lines: Vec<String>) -> (u64, u64) {
+    let mut part1_result = 0;
+    let mut part2_result = 0;
 
     let input_data: InputData = InputData::from(lines);
+    for update in input_data.get_updates() {
+        if is_valid_update(update, input_data.get_ordering_rules()) {
+            part1_result += get_middle_element(update).unwrap();
+        } else {
+            let mut update_clone = update.clone();
+            let fixed_update = fix_update(&mut update_clone, input_data.get_ordering_rules());
 
-    let updates = input_data.get_updates();
-    for update in updates {
-        if validate_update(update, input_data.get_ordering_rules()) {
-            result += get_middle_element(update).unwrap();
+            part2_result += get_middle_element(fixed_update).unwrap();
         }
     }
 
-    result
+    (part1_result, part2_result)
 }
-
-// fn part2(_lines: Vec<String>) -> u64 {
-//     todo!()
-// }
-
 fn main() {
-    println!("Solution for part 1 is {}", part1(read_lines("input.txt")));
-    // println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
+    let solution = solve(read_lines("input.txt"));
+
+    println!("Solution for part 1 is {}", solution.0);
+    println!("Solution for part 2 is {}", solution.1);
 }
 
 // Utilities
@@ -130,10 +149,17 @@ fn read_lines(filename: &str) -> Vec<String> {
         .collect()
 }
 
+fn safe_subslice<T>(vec: &[T], start: usize, end: usize) -> &[T] {
+    if start >= vec.len() || start >= end {
+        return &[];
+    }
+    let end = end.min(vec.len());
+    &vec[start..end]
+}
+
 #[cfg(test)]
 mod test {
-    use super::part1;
-    // use super::part2;
+    use super::solve;
 
     const EXAMPLE: [&str; 28] = [
         "47|53",
@@ -168,11 +194,6 @@ mod test {
 
     #[test]
     fn solve_example_part1() {
-        assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 143);
+        assert_eq!(solve(EXAMPLE.map(String::from).to_vec()), (143, 123));
     }
-
-    // #[test]
-    // fn solve_example_part2() {
-    //     assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 31);
-    // }
 }
