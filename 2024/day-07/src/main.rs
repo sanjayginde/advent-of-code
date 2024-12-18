@@ -6,11 +6,26 @@ struct Equation {
     numbers: Vec<u64>,
 }
 
-fn possible_solutions(numbers: &[u64]) -> Vec<u64> {
+fn possible_solutions(numbers: &[u64], support_concatenations: bool) -> Vec<u64> {
     match numbers.len() {
         0 => vec![],
         1 => vec![numbers[0]],
-        2 => vec![numbers[0] + numbers[1], numbers[0] * numbers[1]],
+        2 => {
+            let first = numbers[0];
+            let second = numbers[1];
+
+            let mut poss_solutions = vec![first + second, first * second];
+
+            if support_concatenations {
+                poss_solutions.push(
+                    format!("{}{}", numbers[0], numbers[1])
+                        .parse::<u64>()
+                        .unwrap(),
+                );
+            }
+
+            poss_solutions
+        }
         _ => {
             let first = numbers[0];
             let second = numbers[1];
@@ -22,7 +37,20 @@ fn possible_solutions(numbers: &[u64]) -> Vec<u64> {
             let mut multiplied = vec![first * second];
             multiplied.extend(&rest);
 
-            [possible_solutions(&added), possible_solutions(&multiplied)].concat()
+            let mut poss_solutions = [
+                possible_solutions(&added, support_concatenations),
+                possible_solutions(&multiplied, support_concatenations),
+            ]
+            .to_vec();
+
+            if support_concatenations {
+                let mut concatentated =
+                    vec![format!("{}{}", first, second).parse::<u64>().unwrap()];
+                concatentated.extend(&rest);
+                poss_solutions.push(possible_solutions(&concatentated, support_concatenations));
+            }
+
+            poss_solutions.concat()
         }
     }
 }
@@ -32,14 +60,10 @@ impl Equation {
         self.value
     }
 
-    pub fn solvable(&self) -> bool {
-        let possible_solutions = possible_solutions(&self.numbers);
-        for solution in possible_solutions {
-            if solution == self.value {
-                return true;
-            }
-        }
-        false
+    pub fn solvable(&self, support_concatenations: bool) -> bool {
+        possible_solutions(&self.numbers, support_concatenations)
+            .iter()
+            .any(|solution| solution == &self.value)
     }
 }
 
@@ -57,11 +81,11 @@ impl From<&String> for Equation {
 }
 
 fn part1(lines: Vec<String>) -> u64 {
-    let equations = lines.iter().map(Equation::from).collect::<Vec<_>>();
-
     let mut result: u64 = 0;
+
+    let equations = lines.iter().map(Equation::from).collect::<Vec<_>>();
     for equation in equations {
-        if equation.solvable() {
+        if equation.solvable(false) {
             result += equation.value();
         }
     }
@@ -69,8 +93,17 @@ fn part1(lines: Vec<String>) -> u64 {
     result
 }
 
-fn part2(_lines: Vec<String>) -> usize {
-    todo!()
+fn part2(lines: Vec<String>) -> u64 {
+    let mut result: u64 = 0;
+
+    let equations = lines.iter().map(Equation::from).collect::<Vec<_>>();
+    for equation in equations {
+        if equation.solvable(true) {
+            result += equation.value();
+        }
+    }
+
+    result
 }
 
 fn main() {
@@ -108,8 +141,8 @@ mod test {
         assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 3749);
     }
 
-    // #[test]
-    fn _solve_example_part2() {
-        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 4);
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 11387);
     }
 }
