@@ -25,15 +25,23 @@ impl Map {
         self.matrix[0].len()
     }
 
-    pub fn walk(&mut self) {
-        let mut direction = Direction::North;
-        let mut position = self.start.clone();
-
-        while position.row >= 0
+    pub fn in_bounds(&self, position: &Position) -> bool {
+        position.row >= 0
             && position.row < self.rows() as isize
             && position.col >= 0
             && position.col < self.cols() as isize
-        {
+    }
+
+    /**
+     * Walks the map
+     *
+     * Returns true if a cyclic path was found.
+     */
+    pub fn walk(&mut self) -> bool {
+        let mut direction = Direction::North;
+        let mut position = self.start.clone();
+
+        while self.in_bounds(&position) {
             let next_position = direction.next_position(&position);
 
             let next_tile = &mut match self
@@ -48,8 +56,14 @@ impl Map {
             };
 
             match next_tile.tile_type {
-                TileType::Empty { ref mut visited } => {
-                    *visited = true;
+                TileType::Empty {
+                    ref mut visited_from,
+                } => {
+                    if visited_from.is_some_and(|d| d == direction) {
+                        return true;
+                    }
+
+                    *visited_from = Some(direction);
                     position = next_position;
                 }
                 TileType::Start => {
@@ -57,6 +71,38 @@ impl Map {
                 }
                 TileType::Obstruction => {
                     direction = direction.next_direction();
+                }
+            }
+        }
+
+        false
+    }
+
+    pub fn find_cyclic(&mut self) -> u64 {
+        let mut result = 0;
+        let size = self.size();
+        for row in 0..size.0 {
+            for col in 0..size.1 {
+                if let TileType::Empty { visited_from: _ } = &mut self.matrix[row][col].tile_type {
+                    self.matrix[row][col].tile_type = TileType::Obstruction;
+                    if self.walk() {
+                        result += 1;
+                    }
+
+                    self.matrix[row][col].tile_type = TileType::Empty { visited_from: None };
+                    self.reset();
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn reset(&mut self) {
+        for row in &mut self.matrix {
+            for tile in row {
+                if let TileType::Empty { visited_from } = &mut tile.tile_type {
+                    *visited_from = None;
                 }
             }
         }
@@ -77,17 +123,18 @@ impl Map {
     pub fn print(&self) {
         for row in &self.matrix {
             for tile in row {
-                match tile.tile_type {
+                match &tile.tile_type {
                     TileType::Start => {
                         print!("^");
                     }
-                    TileType::Empty { visited } => {
-                        if visited {
+                    TileType::Empty { visited_from } => match visited_from {
+                        Some(_) => {
                             print!("X");
-                        } else {
+                        }
+                        None => {
                             print!(".");
                         }
-                    }
+                    },
                     TileType::Obstruction => {
                         print!("#");
                     }
@@ -122,7 +169,7 @@ impl From<Vec<String>> for Map {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Direction {
     North,
     South,
@@ -169,8 +216,8 @@ pub struct Tile {
 
 impl Tile {
     pub fn visited(&self) -> bool {
-        match self.tile_type {
-            TileType::Empty { visited } => visited,
+        match &self.tile_type {
+            TileType::Empty { visited_from } => visited_from.is_some(),
             TileType::Start => true,
             TileType::Obstruction => false,
         }
@@ -182,32 +229,36 @@ impl From<char> for Tile {
         let tile_type = match ch {
             '^' => TileType::Start,
             '#' => TileType::Obstruction,
-            _ => TileType::Empty { visited: false },
+            _ => TileType::Empty { visited_from: None },
         };
 
         Tile { tile_type }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 enum TileType {
-    Empty { visited: bool },
+    Empty { visited_from: Option<Direction> },
     Start,
     Obstruction,
 }
 
 fn part1(lines: Vec<String>) -> u64 {
     let mut map = Map::from(lines);
-
     map.walk();
-    map.print();
 
     map.num_visited()
 }
 
+fn part2(lines: Vec<String>) -> u64 {
+    let mut map = Map::from(lines);
+
+    map.find_cyclic()
+}
+
 fn main() {
     println!("Solution for part 1 is {}", part1(read_lines("input.txt")));
-    // println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
+    println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
 }
 
 fn read_lines(filename: &str) -> Vec<String> {
@@ -221,7 +272,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 #[cfg(test)]
 mod test {
 
-    use super::part1;
+    use super::{part1, part2};
 
     const EXAMPLE: [&str; 10] = [
         "....#.....",
@@ -239,5 +290,10 @@ mod test {
     #[test]
     fn solve_part1() {
         assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 41);
+    }
+
+    #[test]
+    fn solve_part2() {
+        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 6);
     }
 }
