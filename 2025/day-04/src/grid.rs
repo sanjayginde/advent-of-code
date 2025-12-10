@@ -14,54 +14,34 @@ pub fn check_adjacent<T, F>(grid: &[Vec<T>], coordinate: Coordinate, operation: 
 where
     F: Fn(&T) -> bool + Copy,
 {
-    let mut result = 0;
+    let directions = [
+        // above
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        // sides
+        (0, -1),
+        (0, 1),
+        // below
+        (1, -1),
+        (1, 0),
+        (1, 1),
+    ];
 
-    if coordinate.row > 0
-        && let Some(row_above) = grid.get(coordinate.row - 1)
-    {
-        let col = coordinate.col;
+    directions
+        .iter()
+        .filter_map(|&(dr, dc)| {
+            let new_row = coordinate.row as isize + dr;
+            let new_col = coordinate.col as isize + dc;
 
-        if col > 0 && row_above.get(col - 1).is_some_and(operation) {
-            result += 1;
-        }
-
-        if row_above.get(col).is_some_and(operation) {
-            result += 1;
-        }
-
-        if row_above.get(col + 1).is_some_and(operation) {
-            result += 1;
-        }
-    }
-
-    if let Some(row) = grid.get(coordinate.row) {
-        let col = coordinate.col;
-        if col > 0 && row.get(col - 1).is_some_and(operation) {
-            result += 1;
-        }
-
-        if row.get(col + 1).is_some_and(operation) {
-            result += 1;
-        }
-    }
-
-    if let Some(row_below) = grid.get(coordinate.row + 1) {
-        let col = coordinate.col;
-
-        if col > 0 && row_below.get(col - 1).is_some_and(operation) {
-            result += 1;
-        }
-
-        if row_below.get(col).is_some_and(operation) {
-            result += 1;
-        }
-
-        if row_below.get(col + 1).is_some_and(operation) {
-            result += 1;
-        }
-    }
-
-    result
+            if new_row >= 0 && new_col >= 0 {
+                grid.get(new_row as usize)?.get(new_col as usize)
+            } else {
+                None
+            }
+        })
+        .filter(|cell| operation(cell))
+        .count()
 }
 
 pub fn parse_to_char_grid(lines: &[String]) -> Vec<Vec<char>> {
