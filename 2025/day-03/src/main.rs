@@ -1,45 +1,70 @@
 use std::fs::read_to_string;
 
 fn part1(lines: Vec<String>) -> usize {
-    lines.into_iter().fold(0, |acc, line| {
-        let first_digit_search: Vec<_> =
-            line.split_at(line.len() - 1).0.chars().collect::<Vec<_>>();
-
-        let mut offset = 0;
-        let mut first_digit = 0;
-        for (i, char) in first_digit_search.into_iter().enumerate() {
-            let possible = char.to_digit(10).unwrap();
-            if possible > first_digit {
-                offset = i;
-                first_digit = possible;
-            }
-        }
-
-        let second_digit_search: Vec<_> = line.split_at(offset + 1).1.chars().collect::<Vec<_>>();
-
-        let mut second_digit = 0;
-        for char in second_digit_search.into_iter() {
-            let possible = char.to_digit(10).unwrap();
-            if possible > second_digit {
-                second_digit = possible;
-            }
-        }
-
-        let joltage = format!("{}{}", first_digit, second_digit)
-            .parse::<usize>()
-            .unwrap();
-
-        acc + joltage
-    })
+    lines
+        .into_iter()
+        .fold(0, |acc, line| acc + find_joltage(&line, 2))
 }
 
-fn _part2(_lines: Vec<String>) -> u32 {
-    todo!()
+fn part2(lines: Vec<String>) -> usize {
+    lines
+        .into_iter()
+        .fold(0, |acc, line| acc + find_joltage(&line, 12))
+}
+
+#[derive(Debug)]
+struct Digit {
+    position: usize,
+    value: String,
+}
+
+fn find_joltage(line: &str, num_digits: usize) -> usize {
+    let mut joltage = "".to_string();
+    let mut curr_digit: Option<Digit> = None;
+
+    for place in (0..num_digits).rev() {
+        let offset = match curr_digit {
+            None => 0,
+            Some(d) => d.position + 1,
+        };
+
+        let digit = find_largest_digit(line, offset, place);
+        joltage.push_str(&digit.value);
+
+        curr_digit = Some(digit);
+    }
+
+    joltage.parse::<usize>().unwrap()
+}
+
+fn find_largest_digit(line: &str, offset: usize, cutoff: usize) -> Digit {
+    let mut position = 0;
+    let mut value = 0;
+
+    let search_space = &line[offset..(line.len() - cutoff)];
+
+    for (i, char) in search_space
+        .chars()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .enumerate()
+    {
+        let possible = char.to_digit(10).unwrap() as usize;
+        if possible > value {
+            position = i;
+            value = possible;
+        }
+    }
+
+    Digit {
+        position: position + offset,
+        value: value.to_string(),
+    }
 }
 
 fn main() {
     println!("Solution for part 1 is {}", part1(read_lines("input.txt")));
-    // println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
+    println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
 }
 
 // Utilities
@@ -55,7 +80,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 #[cfg(test)]
 mod test {
     use super::part1;
-    // use super::part2;
+    use super::part2;
 
     const EXAMPLE: [&str; 4] = [
         "987654321111111",
@@ -69,8 +94,8 @@ mod test {
         assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 357);
     }
 
-    // #[test]
-    // fn solve_example_part2() {
-    //     assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 6);
-    // }
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 3121910778619);
+    }
 }
