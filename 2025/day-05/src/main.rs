@@ -7,8 +7,9 @@ fn part1(lines: Vec<String>) -> usize {
     let mut result = 0;
 
     let (ranges, ids) = parse(lines);
+    let squashed_ranges = squash_ranges(&ranges);
     for id in ids {
-        if ranges.iter().any(|range| range.contains(&id)) {
+        if squashed_ranges.iter().any(|range| range.contains(&id)) {
             result += 1;
         }
     }
@@ -17,11 +18,22 @@ fn part1(lines: Vec<String>) -> usize {
 }
 
 fn part2(lines: Vec<String>) -> usize {
-    let (mut ranges, _) = parse(lines);
-    ranges.sort_by(|lhs, rhs| lhs.start.cmp(&rhs.start));
+    let (ranges, _) = parse(lines);
+
+    let mut result = 0;
+    for range in squash_ranges(&ranges) {
+        result += range.end - range.start;
+    }
+
+    result
+}
+
+fn squash_ranges(ranges: &[Range<usize>]) -> Vec<Range<usize>> {
+    let mut sorted_ranges = ranges.to_vec();
+    sorted_ranges.sort_by(|lhs, rhs| lhs.start.cmp(&rhs.start));
 
     let mut new_ranges = vec![];
-    let mut range_iter = ranges.iter_mut();
+    let mut range_iter = sorted_ranges.iter_mut();
     let mut curr_range = range_iter.next().unwrap();
     for range in range_iter {
         if ranges_overlap(curr_range, range) {
@@ -39,12 +51,7 @@ fn part2(lines: Vec<String>) -> usize {
 
     new_ranges.push(curr_range.clone());
 
-    let mut result = 0;
-    for range in new_ranges {
-        result += range.end - range.start;
-    }
-
-    result
+    new_ranges
 }
 
 fn main() {
