@@ -1,0 +1,8 @@
+[package]
+name = "day-05"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+regex = "1.12.2"
+rust-aoc-utils = { path = "../../rust-aoc-utils" }
