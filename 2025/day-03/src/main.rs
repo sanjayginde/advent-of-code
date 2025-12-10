@@ -23,10 +23,7 @@ fn find_joltage(line: &str, num_digits: usize) -> usize {
     let mut curr_digit: Option<Digit> = None;
 
     for place in (0..num_digits).rev() {
-        let offset = match curr_digit {
-            None => 0,
-            Some(d) => d.position + 1,
-        };
+        let offset = curr_digit.map_or(0, |d| d.position + 1);
 
         let digit = find_largest_digit(line, offset, place);
         joltage.push_str(&digit.value);
