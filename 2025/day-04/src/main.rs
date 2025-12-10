@@ -1,10 +1,5 @@
-mod grid;
-
-use grid::Coordinate;
-use grid::parse_to_char_grid;
+use rust_aoc_utils::{Coordinate, check_adjacent, parse_to_char_grid};
 use std::fs::read_to_string;
-
-use crate::grid::check_adjacent;
 
 const PAPER_ROLL: char = '@';
 
