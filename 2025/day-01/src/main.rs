@@ -18,7 +18,7 @@ impl From<&String> for Rotation {
 
         Self {
             ticks: ticks % 100,
-            full_rotations: (ticks.abs() as u32) / 100,
+            full_rotations: (ticks.unsigned_abs()) / 100,
         }
     }
 }
@@ -48,9 +48,9 @@ fn part1(lines: Vec<String>) -> u32 {
     rotations.iter().fold(50, |mut pos, r| {
         pos += r.ticks;
         if pos < 0 {
-            pos = 100 + pos;
+            pos += 100;
         } else if pos > 99 {
-            pos = pos - 100;
+            pos -= 100;
         }
 
         if pos == 0 {
@@ -72,13 +72,13 @@ fn part2(lines: Vec<String>) -> u32 {
 
         let mut new_pos = pos + r.ticks;
         if new_pos < 0 {
-            new_pos = 100 + new_pos;
+            new_pos += 100;
             if pos != 0 && new_pos != 0 && new_pos > pos {
                 count += 1;
             }
             pos = new_pos;
         } else if new_pos > 99 {
-            new_pos = new_pos - 100;
+            new_pos -= 100;
             if pos != 0 && new_pos != 0 && new_pos < pos {
                 count += 1;
             }

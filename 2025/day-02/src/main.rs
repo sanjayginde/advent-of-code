@@ -2,22 +2,22 @@ use std::fs::read_to_string;
 
 #[derive(Debug)]
 struct Range {
-    start: u64,
-    end: u64,
+    start: usize,
+    end: usize,
 }
 
 impl From<&str> for Range {
     fn from(s: &str) -> Self {
         let mut split = s.split('-');
-        let start = split.next().unwrap().parse::<u64>().unwrap();
-        let end = split.next().unwrap().parse::<u64>().unwrap();
+        let start = split.next().unwrap().parse::<usize>().unwrap();
+        let end = split.next().unwrap().parse::<usize>().unwrap();
 
         Range { start, end }
     }
 }
 
-fn part1(ranges: Vec<Range>) -> u64 {
-    ranges.into_iter().fold(0 as u64, |mut acc, range| {
+fn part1(ranges: Vec<Range>) -> usize {
+    ranges.into_iter().fold(0, |mut acc, range| {
         let mut current = range.start;
         while current <= range.end {
             let s = current.to_string();
@@ -33,8 +33,8 @@ fn part1(ranges: Vec<Range>) -> u64 {
     })
 }
 
-fn part2(ranges: Vec<Range>) -> u64 {
-    ranges.into_iter().fold(0 as u64, |mut acc, range| {
+fn part2(ranges: Vec<Range>) -> usize {
+    ranges.into_iter().fold(0, |mut acc, range| {
         let mut current = range.start;
         while current <= range.end {
             let s = current.to_string();
@@ -69,7 +69,7 @@ fn read_input(filename: &str) -> Vec<Range> {
     parse_input(&input)
 }
 
-fn parse_input(input: &String) -> Vec<Range> {
+fn parse_input(input: &str) -> Vec<Range> {
     input.trim().split(",").map(Range::from).collect()
 }
 
