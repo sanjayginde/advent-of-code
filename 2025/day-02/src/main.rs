@@ -83,13 +83,13 @@ mod test {
 
     #[test]
     fn solve_example_part1() {
-        let ranges = parse_input(&EXAMPLE.to_owned());
+        let ranges = parse_input(EXAMPLE);
         assert_eq!(part1(ranges), 1227775554);
     }
 
     #[test]
     fn solve_example_part2() {
-        let ranges = parse_input(&EXAMPLE.to_owned());
+        let ranges = parse_input(EXAMPLE);
         assert_eq!(part2(ranges), 4174379265);
     }
 }
