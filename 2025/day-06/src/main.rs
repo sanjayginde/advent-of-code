@@ -4,8 +4,8 @@ use rust_aoc_utils::{
 
 #[derive(Debug, Clone)]
 enum Element {
-    Plus,
-    Times,
+    Add,
+    Multiply,
     Number(usize),
 }
 
@@ -23,22 +23,22 @@ impl Operation {
 
 #[derive(Debug, Clone)]
 enum Operator {
-    Plus,
-    Times,
+    Add,
+    Multiply,
 }
 
 impl Operator {
     fn start_value(&self) -> usize {
         match self {
-            Operator::Plus => 0,
-            Operator::Times => 1,
+            Operator::Add => 0,
+            Operator::Multiply => 1,
         }
     }
 
     pub fn handle(&self, lhs: usize, rhs: usize) -> usize {
         match self {
-            Operator::Plus => lhs + rhs,
-            Operator::Times => lhs * rhs,
+            Operator::Add => lhs + rhs,
+            Operator::Multiply => lhs * rhs,
         }
     }
 
@@ -52,8 +52,8 @@ impl Operator {
 impl From<&str> for Element {
     fn from(s: &str) -> Self {
         match s {
-            "+" => Element::Plus,
-            "*" => Element::Times,
+            "+" => Element::Add,
+            "*" => Element::Multiply,
             _ => Element::Number(s.parse::<usize>().expect("Expected number")),
         }
     }
@@ -67,13 +67,13 @@ fn part1(lines: Vec<String>) -> usize {
         let mut iter = row.iter().rev();
         let operator = iter.next().unwrap();
         result += match operator {
-            Element::Plus => iter.fold(0, |acc, el| match el {
+            Element::Add => iter.fold(0, |acc, el| match el {
                 Element::Number(num) => acc + num,
                 _ => {
                     unreachable!("Expected number, but found {:?}", el)
                 }
             }),
-            Element::Times => iter.fold(1, |acc, el| match el {
+            Element::Multiply => iter.fold(1, |acc, el| match el {
                 Element::Number(num) => acc * num,
                 _ => {
                     unreachable!("Expected number, but found {:?}", el)
@@ -110,8 +110,8 @@ fn part2(lines: Vec<String>) -> usize {
                 }
 
                 current_operator = Some(match char {
-                    '+' => Operator::Plus,
-                    '*' => Operator::Times,
+                    '+' => Operator::Add,
+                    '*' => Operator::Multiply,
                     _ => unreachable!(),
                 });
             }
