@@ -3,10 +3,12 @@
 //! This crate provides common data structures and algorithms that are frequently
 //! needed when solving Advent of Code puzzles.
 
+pub mod file;
 pub mod grid;
 pub mod ranges;
 
 // Re-export commonly used items for convenience
+pub use file::read_lines_from_file;
 pub use grid::{
     check_adjacent, parse_to_char_grid, parse_to_grid, parse_to_whitespaced_grid, print_grid,
     transpose, Coordinate,

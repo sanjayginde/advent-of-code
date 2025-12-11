@@ -1,5 +1,6 @@
-use rust_aoc_utils::{parse_to_char_grid, parse_to_whitespaced_grid, transpose};
-use std::fs::read_to_string;
+use rust_aoc_utils::{
+    parse_to_char_grid, parse_to_whitespaced_grid, read_lines_from_file, transpose,
+};
 
 #[derive(Debug, Clone)]
 enum Element {
@@ -151,18 +152,14 @@ fn part2(lines: Vec<String>) -> usize {
 
 // NOTE: input.txt needs to be 'right padded' to create a uniform grid!
 fn main() {
-    println!("Solution for part 1 is {}", part1(read_lines("input.txt")));
-    println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
-}
-
-// Utilities
-
-fn read_lines(filename: &str) -> Vec<String> {
-    read_to_string(filename)
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect()
+    println!(
+        "Solution for part 1 is {}",
+        part1(read_lines_from_file("input.txt"))
+    );
+    println!(
+        "Solution for part 2 is {}",
+        part2(read_lines_from_file("input.txt"))
+    );
 }
 
 #[cfg(test)]
