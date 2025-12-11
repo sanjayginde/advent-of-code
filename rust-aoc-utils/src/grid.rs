@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Coordinate {
     pub row: usize,
@@ -103,6 +105,45 @@ where
     }
 
     matrix
+}
+
+pub fn parse_to_whitespaced_grid<T, F>(lines: &[String], parse: F) -> Vec<Vec<T>>
+where
+    F: Fn(&str) -> T,
+    F: Copy,
+{
+    let mut matrix: Vec<Vec<T>> = vec![];
+
+    for line in lines.iter() {
+        let items = line.split_ascii_whitespace().collect::<Vec<_>>();
+        matrix.push(items.into_iter().map(parse).collect::<Vec<_>>());
+    }
+
+    matrix
+}
+
+pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
+    assert!(!v.is_empty());
+    let len = v[0].len();
+    let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
+    (0..len)
+        .map(|_| {
+            iters
+                .iter_mut()
+                .map(|n| n.next().unwrap())
+                .collect::<Vec<T>>()
+        })
+        .collect()
+}
+
+pub fn print_grid<T: Display>(grid: &[Vec<T>]) {
+    for row in grid.iter() {
+        print!("[");
+        for col in row.iter() {
+            print!("{}", col);
+        }
+        println!("]");
+    }
 }
 
 #[cfg(test)]
