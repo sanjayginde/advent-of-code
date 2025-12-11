@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Coordinate {
     pub row: usize,
@@ -132,6 +134,16 @@ pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
                 .collect::<Vec<T>>()
         })
         .collect()
+}
+
+pub fn print_grid<T: Display>(grid: &[Vec<T>]) {
+    for row in grid.iter() {
+        print!("[");
+        for col in row.iter() {
+            print!("{}", col);
+        }
+        println!("]");
+    }
 }
 
 #[cfg(test)]

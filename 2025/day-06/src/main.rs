@@ -1,4 +1,4 @@
-use rust_aoc_utils::{parse_to_whitespaced_grid, transpose};
+use rust_aoc_utils::{parse_to_char_grid, parse_to_whitespaced_grid, transpose};
 use std::fs::read_to_string;
 
 #[derive(Debug, Clone)]
@@ -6,6 +6,46 @@ enum Element {
     Plus,
     Times,
     Number(usize),
+}
+
+#[derive(Debug, Clone)]
+struct Operation {
+    operator: Operator,
+    size: usize,
+}
+
+impl Operation {
+    pub fn calculate(&self, values: &[usize]) -> usize {
+        self.operator.calculate(values)
+    }
+}
+
+#[derive(Debug, Clone)]
+enum Operator {
+    Plus,
+    Times,
+}
+
+impl Operator {
+    fn start_value(&self) -> usize {
+        match self {
+            Operator::Plus => 0,
+            Operator::Times => 1,
+        }
+    }
+
+    pub fn handle(&self, lhs: usize, rhs: usize) -> usize {
+        match self {
+            Operator::Plus => lhs + rhs,
+            Operator::Times => lhs * rhs,
+        }
+    }
+
+    pub fn calculate(&self, values: &[usize]) -> usize {
+        values
+            .iter()
+            .fold(self.start_value(), |acc, value| self.handle(acc, *value))
+    }
 }
 
 impl From<&str> for Element {
@@ -29,17 +69,17 @@ fn part1(lines: Vec<String>) -> usize {
             Element::Plus => iter.fold(0, |acc, el| match el {
                 Element::Number(num) => acc + num,
                 _ => {
-                    panic!("Expected number, but found {:?}", el)
+                    unreachable!("Expected number, but found {:?}", el)
                 }
             }),
             Element::Times => iter.fold(1, |acc, el| match el {
                 Element::Number(num) => acc * num,
                 _ => {
-                    panic!("Expected number, but found {:?}", el)
+                    unreachable!("Expected number, but found {:?}", el)
                 }
             }),
             Element::Number(num) => {
-                panic!("Expected operator, but found number {}", num);
+                unreachable!("Expected operator, but found number {}", num);
             }
         };
     }
@@ -47,20 +87,72 @@ fn part1(lines: Vec<String>) -> usize {
     result
 }
 
-// fn part2(lines: Vec<String>) -> usize {
-//     let (ranges, _) = parse(lines);
+fn part2(lines: Vec<String>) -> usize {
+    let mut reverse = lines.to_vec();
+    reverse.reverse();
+    let mut iter = reverse.into_iter();
 
-//     let mut result = 0;
-//     for range in squash_ranges(&ranges) {
-//         result += range.end - range.start;
-//     }
+    let ops_str = iter.next().unwrap();
 
-//     result
-// }
+    let mut operations = vec![];
+    let mut current_size = 0;
+    let mut current_operator: Option<Operator> = None;
+    for char in ops_str.chars() {
+        match char {
+            '+' | '*' => {
+                if let Some(operator) = current_operator {
+                    operations.push(Operation {
+                        operator,
+                        size: current_size,
+                    });
+                    current_size = 0;
+                }
 
+                current_operator = Some(match char {
+                    '+' => Operator::Plus,
+                    '*' => Operator::Times,
+                    _ => unreachable!(),
+                });
+            }
+            _ => {
+                current_size += 1;
+            }
+        }
+    }
+
+    // Capture last Operation
+    operations.push(Operation {
+        operator: current_operator.expect("Missing final operator"),
+        size: current_size + 1,
+    });
+
+    let values = transpose(parse_to_char_grid(&iter.collect::<Vec<_>>()))
+        .into_iter()
+        .filter_map(|mut row| {
+            row.reverse();
+            let s: String = row.into_iter().collect();
+            s.trim().parse::<usize>().ok()
+        })
+        .collect::<Vec<_>>();
+
+    let mut result = 0;
+    let mut values_iter = values.into_iter();
+    for operation in operations.into_iter() {
+        let mut op_values = vec![];
+        for _ in 0..operation.size {
+            op_values.push(values_iter.next().unwrap());
+        }
+
+        result += operation.calculate(&op_values);
+    }
+
+    result
+}
+
+// NOTE: input.txt needs to be 'right padded' to create a uniform grid!
 fn main() {
     println!("Solution for part 1 is {}", part1(read_lines("input.txt")));
-    // println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
+    println!("Solution for part 2 is {}", part2(read_lines("input.txt")));
 }
 
 // Utilities
@@ -76,7 +168,7 @@ fn read_lines(filename: &str) -> Vec<String> {
 #[cfg(test)]
 mod test {
     use super::part1;
-    // use super::part2;
+    use super::part2;
 
     const EXAMPLE: [&str; 4] = [
         "123 328  51 64 ",
@@ -85,13 +177,26 @@ mod test {
         "*   +   *   +  ",
     ];
 
+    const EXAMPLE_2: [&str; 5] = [
+        "95 92 45 63      1 78 885",
+        "41 29 61 65     99 57 924",
+        " 1 4  22 9416  987  3 134",
+        " 4 3  68 8629 4961  5 737",
+        "*  *  *  +    +    *  +  ",
+    ];
+
     #[test]
     fn solve_example_part1() {
         assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 4277556);
     }
 
-    // #[test]
-    // fn _solve_example_part2() {
-    //     assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 14);
-    // }
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 3263827);
+    }
+
+    #[test]
+    fn solve_example2_part2() {
+        assert_eq!(part2(EXAMPLE_2.map(String::from).to_vec()), 25161998);
+    }
 }
