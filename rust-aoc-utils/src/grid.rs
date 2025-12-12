@@ -81,7 +81,7 @@ where
         .count()
 }
 
-pub fn parse_to_char_grid(lines: &[String]) -> Vec<Vec<char>> {
+pub fn parse_to_chars(lines: &[String]) -> Vec<Vec<char>> {
     let mut matrix: Vec<Vec<char>> = vec![];
 
     for line in lines.iter() {
@@ -92,7 +92,7 @@ pub fn parse_to_char_grid(lines: &[String]) -> Vec<Vec<char>> {
     matrix
 }
 
-pub fn parse_to_grid<T, F>(lines: &[String], parse: F) -> Vec<Vec<T>>
+pub fn parse<T, F>(lines: &[String], parse: F) -> Vec<Vec<T>>
 where
     F: Fn(char) -> T,
     F: Copy,
@@ -107,7 +107,7 @@ where
     matrix
 }
 
-pub fn parse_to_whitespaced_grid<T, F>(lines: &[String], parse: F) -> Vec<Vec<T>>
+pub fn parse_whitespaced<T, F>(lines: &[String], parse: F) -> Vec<Vec<T>>
 where
     F: Fn(&str) -> T,
     F: Copy,
@@ -136,7 +136,7 @@ pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
         .collect()
 }
 
-pub fn print_grid<T: Display>(grid: &[Vec<T>]) {
+pub fn print<T: Display>(grid: &[Vec<T>]) {
     for row in grid.iter() {
         print!("[");
         for col in row.iter() {
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn test_parse_to_char_grid() {
         let lines = vec!["ABC".to_string(), "DEF".to_string()];
-        let grid = parse_to_char_grid(&lines);
+        let grid = parse_to_chars(&lines);
 
         assert_eq!(grid.len(), 2);
         assert_eq!(grid[0], vec!['A', 'B', 'C']);
