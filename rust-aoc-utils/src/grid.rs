@@ -136,7 +136,7 @@ pub fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>> {
         .collect()
 }
 
-pub fn print_grid<T: Display>(grid: &[Vec<T>]) {
+pub fn print<T: Display>(grid: &[Vec<T>]) {
     for row in grid.iter() {
         print!("[");
         for col in row.iter() {
