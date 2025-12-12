@@ -157,6 +157,42 @@ impl PointGraph {
             }
         }
     }
+
+    fn connect_all(&mut self) -> (Point, Point) {
+        let mut result = None;
+        let mut edges_iter = self.edges().to_vec().into_iter();
+        while !self.all_connected() {
+            let edge = edges_iter.next();
+            match edge {
+                Some(ref e) => {
+                    self.connect_circuit(e);
+                }
+                None => unreachable!("Exhausted all edges!"),
+            }
+
+            result = edge;
+        }
+        match result {
+            Some(ref edge) => (
+                self.points[edge.a_index].clone(),
+                self.points[edge.b_index].clone(),
+            ),
+            None => unreachable!("Could not connect all points!"),
+        }
+    }
+
+    fn all_connected(&self) -> bool {
+        let circuit = self.points[0].circuit.clone();
+
+        self.points.iter().all(|point| {
+            if let (Some(lhs), Some(rhs)) = (&circuit, &point.circuit)
+                && Rc::ptr_eq(lhs, rhs)
+            {
+                return true;
+            }
+            false
+        })
+    }
 }
 
 fn part1(points: Vec<Point>, limit: usize) -> usize {
@@ -169,10 +205,23 @@ fn part1(points: Vec<Point>, limit: usize) -> usize {
     circuit_sizes.iter().take(3).product()
 }
 
+fn part2(points: Vec<Point>) -> isize {
+    let mut graph = PointGraph::new(points);
+
+    let (a, b) = graph.connect_all();
+
+    a.x * b.x
+}
+
 fn main() {
     println!(
         "Solution for part 1 is {}",
         part1(parse_lines(read_lines_from_file("input.txt")), 1_000)
+    );
+
+    println!(
+        "Solution for part 1 is {}",
+        part2(parse_lines(read_lines_from_file("input.txt")))
     );
 }
 
@@ -184,6 +233,7 @@ fn parse_lines(lines: Vec<String>) -> Vec<Point> {
 mod test {
     use super::parse_lines;
     use super::part1;
+    use super::part2;
 
     const EXAMPLE: [&str; 20] = [
         "162,817,812",
@@ -213,6 +263,14 @@ mod test {
         assert_eq!(
             part1(parse_lines(EXAMPLE.map(String::from).to_vec()), 10),
             40
+        );
+    }
+
+    #[test]
+    fn solve_example_part2() {
+        assert_eq!(
+            part2(parse_lines(EXAMPLE.map(String::from).to_vec())),
+            25272
         );
     }
 }
