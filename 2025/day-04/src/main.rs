@@ -1,4 +1,5 @@
-use rust_aoc_utils::{Coordinate, check_adjacent, parse_to_char_grid};
+use rust_aoc_utils::Coordinate;
+use rust_aoc_utils::grid;
 use std::fs::read_to_string;
 
 const PAPER_ROLL: char = '@';
@@ -10,11 +11,11 @@ fn check(c: &char) -> bool {
 fn part1(lines: Vec<String>) -> usize {
     let mut result = 0;
 
-    let grid = parse_to_char_grid(&lines);
+    let grid = grid::parse_to_chars(&lines);
     for (row_index, row) in grid.iter().enumerate() {
         for (col_index, char) in row.iter().enumerate() {
             let coordinate = Coordinate::new(row_index, col_index);
-            if check(char) && check_adjacent(&grid, coordinate, check) < 4 {
+            if check(char) && grid::check_adjacent(&grid, coordinate, check) < 4 {
                 result += 1;
             }
         }
@@ -25,7 +26,7 @@ fn part1(lines: Vec<String>) -> usize {
 
 fn part2(lines: Vec<String>) -> usize {
     let mut result = 0;
-    let mut grid = parse_to_char_grid(&lines);
+    let mut grid = grid::parse_to_chars(&lines);
 
     loop {
         let rolls = forklift_rolls(&grid);
@@ -48,7 +49,7 @@ fn forklift_rolls(grid: &[Vec<char>]) -> Vec<Coordinate> {
     for (row_index, row) in grid.iter().enumerate() {
         for (col_index, char) in row.iter().enumerate() {
             let coordinate = Coordinate::new(row_index, col_index);
-            if check(char) && check_adjacent(grid, coordinate, check) < 4 {
+            if check(char) && grid::check_adjacent(grid, coordinate, check) < 4 {
                 result.push(coordinate);
             }
         }

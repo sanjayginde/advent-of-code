@@ -1,6 +1,5 @@
-use rust_aoc_utils::{
-    parse_to_char_grid, parse_to_whitespaced_grid, read_lines_from_file, transpose,
-};
+use rust_aoc_utils::grid;
+use rust_aoc_utils::read_lines_from_file;
 
 #[derive(Debug, Clone)]
 enum Element {
@@ -60,7 +59,7 @@ impl From<&str> for Element {
 }
 
 fn part1(lines: Vec<String>) -> usize {
-    let grid = transpose(parse_to_whitespaced_grid(&lines, |s| Element::from(s)));
+    let grid = grid::transpose(grid::parse_whitespaced(&lines, |s| Element::from(s)));
 
     let mut result = 0;
     for row in grid.iter() {
@@ -127,7 +126,7 @@ fn part2(lines: Vec<String>) -> usize {
         size: current_size + 1,
     });
 
-    let values = transpose(parse_to_char_grid(&iter.collect::<Vec<_>>()))
+    let values = grid::transpose(grid::parse_to_chars(&iter.collect::<Vec<_>>()))
         .into_iter()
         .filter_map(|mut row| {
             row.reverse();

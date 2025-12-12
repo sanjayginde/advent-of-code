@@ -36,7 +36,7 @@ impl Display for Element {
 fn part1(lines: Vec<String>) -> usize {
     let mut result = 0;
 
-    let mut grid = grid::parse_to_grid(&lines, Element::from);
+    let mut grid = grid::parse(&lines, Element::from);
 
     for i in 0..grid.len() {
         for j in 0..grid[i].len() {
@@ -121,6 +121,6 @@ mod test {
 
     // #[test]
     // fn solve_example_part2() {
-    //     assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 3263827);
+    //     assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 40);
     // }
 }
