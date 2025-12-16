@@ -1,37 +1,27 @@
 use rust_aoc_utils::read_lines_from_file;
 use std::collections::HashMap;
 
+#[derive(Debug, Hash, Eq, PartialEq)]
+struct PathKey(String, bool, bool);
+
 fn part1(lines: Vec<String>) -> usize {
     let graph = parse(lines);
-    find_path("you", &graph)
-}
-
-fn find_path(current: &str, graph: &HashMap<String, Vec<String>>) -> usize {
-    if current == "out" {
-        return 1;
-    }
-
-    graph
-        .get(current)
-        .unwrap_or_else(|| panic!("No ouputs found for {}", current))
-        .iter()
-        .map(|next| find_path(next, graph))
-        .sum::<usize>()
+    let mut cache: HashMap<PathKey, usize> = HashMap::new();
+    find_path("you", true, true, &graph, &mut cache)
 }
 
 fn part2(lines: Vec<String>) -> usize {
     let graph = parse(lines);
-    let mut cache: HashMap<(String, bool, bool), usize> = HashMap::new();
-    find_svr_path("svr".to_string(), false, false, &graph, &mut cache)
+    let mut cache: HashMap<PathKey, usize> = HashMap::new();
+    find_path("svr", false, false, &graph, &mut cache)
 }
 
-// #[memoize]
-fn find_svr_path(
-    current: String,
+fn find_path(
+    current: &str,
     dac: bool,
     fft: bool,
     graph: &HashMap<String, Vec<String>>,
-    cache: &mut HashMap<(String, bool, bool), usize>,
+    cache: &mut HashMap<PathKey, usize>,
 ) -> usize {
     if current == "out" {
         let result = match dac && fft {
@@ -42,19 +32,17 @@ fn find_svr_path(
         return result;
     }
 
-    match graph.get(&current) {
+    match graph.get(current) {
         Some(nexts) => nexts
             .iter()
             .map(|next| {
                 let visited_dac = dac || current == "dac";
                 let visited_fft = fft || current == "fft";
-                let key = (next.to_string(), visited_dac, visited_fft);
+                let key = PathKey(next.to_string(), visited_dac, visited_fft);
                 match cache.get(&key) {
                     Some(value) => *value,
-
                     None => {
-                        let value =
-                            find_svr_path(next.to_string(), visited_dac, visited_fft, graph, cache);
+                        let value = find_path(next, visited_dac, visited_fft, graph, cache);
                         cache.insert(key, value);
                         value
                     }
