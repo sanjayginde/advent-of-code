@@ -3,20 +3,15 @@ use regex::Regex;
 use rust_aoc_utils::read_lines_from_file;
 
 #[derive(Debug)]
-enum Light {
-    On,
-    Off,
-}
+struct LightBits(u64);
 
 #[derive(Debug)]
-struct Button {
-    toggles: Vec<usize>,
-}
+struct ButtonMask(u64);
 
 #[derive(Debug)]
 struct Machine {
-    lights: Vec<Light>,
-    buttons: Vec<Button>,
+    light_bits: LightBits,
+    button_masks: Vec<ButtonMask>,
 }
 
 impl From<String> for Machine {
@@ -25,24 +20,26 @@ impl From<String> for Machine {
         let buttons_regex = Regex::new(r"\([\d,]+\)").unwrap();
         let _joltage_regex = Regex::new(r"\{[\d,]+\}").unwrap();
 
-        let lights = match lights_regex.captures(&s) {
+        let light_bits = match lights_regex.captures(&s) {
             None => {
                 panic!("Could not find lights in '{}'", s)
             }
             Some(capture) => {
                 let m = &capture[0];
-                m[1..m.len() - 1]
-                    .chars()
-                    .map(|ch| match ch {
-                        '.' => Light::Off,
-                        '#' => Light::On,
+                let light_chars = &m[1..m.len() - 1];
+                let mut lights_bits = 0u64;
+                for (i, ch) in light_chars.chars().enumerate() {
+                    match ch {
+                        '.' => {}
+                        '#' => lights_bits |= 1 << i,
                         _ => panic!("Invalid light code '{}'", ch),
-                    })
-                    .collect::<Vec<_>>()
+                    }
+                }
+                LightBits(lights_bits)
             }
         };
 
-        let buttons: Vec<Button> = buttons_regex
+        let button_masks: Vec<ButtonMask> = buttons_regex
             .captures_iter(&s)
             .map(|captures| {
                 let capture = &captures[0];
@@ -50,25 +47,65 @@ impl From<String> for Machine {
                     .split(",")
                     .filter_map(|n| n.parse().ok())
                     .collect();
-                Button { toggles }
+
+                let mut button_mask = 0u64;
+                for pos in toggles {
+                    button_mask |= 1 << pos;
+                }
+
+                ButtonMask(button_mask)
             })
             .collect();
 
-        Machine { lights, buttons }
+        Machine {
+            light_bits,
+            button_masks,
+        }
     }
 }
 
-pub fn min_button_presses(machine: &Machine) -> usize {
-    let result = 0;
+const MAX_LENGTH: usize = 10;
+fn min_button_presses(machine: &Machine) -> Option<usize> {
+    println!("Processing machine {:b}", machine.light_bits.0);
 
-    result
+    let mut i = 1;
+
+    while i < MAX_LENGTH {
+        let mask_variations = variations_of_length(i, &machine.button_masks);
+
+        for masks in mask_variations {
+            let mut current = 0;
+            for mask in masks {
+                current ^= mask.0;
+            }
+            if current == machine.light_bits.0 {
+                return Some(i);
+            }
+        }
+
+        i += 1;
+    }
+
+    None
+}
+
+fn variations_of_length<T>(length: usize, items: &[T]) -> impl Iterator<Item = Vec<&T>> {
+    std::iter::repeat_n(items.iter(), length).multi_cartesian_product()
 }
 
 fn part1(lines: Vec<String>) -> usize {
     let machines: Vec<Machine> = lines.into_iter().map(Machine::from).collect();
-    // println!("{:?}", machines);
 
-    machines.iter().map(min_button_presses).sum()
+    machines
+        .iter()
+        .map(min_button_presses)
+        .fold(0, |acc, presses| match presses {
+            Some(num) => acc + num,
+            None => {
+                println!("Couldn't find solution for a machine");
+                0
+            }
+        })
 }
 
 fn part2(_lines: Vec<String>) -> usize {
@@ -95,11 +132,11 @@ mod test {
 
     #[test]
     fn solve_example_part1() {
-        assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 50);
+        assert_eq!(part1(EXAMPLE.map(String::from).to_vec()), 7);
     }
 
     #[test]
-    fn _solve_example_part2() {
-        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 14);
+    fn solve_example_part2() {
+        assert_eq!(part2(EXAMPLE.map(String::from).to_vec()), 0);
     }
 }
